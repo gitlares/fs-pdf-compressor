@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FS PDF Compressor — Drag, drop, done.</title>
+    <meta name="description" content="A fast, private, open-source PDF compressor for macOS. Everything stays on your Mac.">
+    <meta name="theme-color" content="#f6f7fb">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="FS PDF Compressor">
+    <meta property="og:description" content="Compress PDFs locally on your Mac. Drag, drop, done.">
+    <meta property="og:url" content="https://gitlares.github.io/fs-pdf-compressor/">
+    <meta property="og:image" content="https://gitlares.github.io/fs-pdf-compressor/og.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FS PDF Compressor">
+    <meta name="twitter:description" content="Compress PDFs locally on your Mac. Drag, drop, done.">
+    <meta name="twitter:image" content="https://gitlares.github.io/fs-pdf-compressor/og.png">
+    <link rel="icon" href="https://raw.githubusercontent.com/gitlares/fs-pdf-compressor/main/assets/PDFCompresor.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="FS PDF Compressor home">
+        <img src="https://raw.githubusercontent.com/gitlares/fs-pdf-compressor/main/assets/PDFCompresor.png" alt="" width="42" height="42">
+        <span>FS PDF Compressor</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="https://github.com/gitlares/fs-pdf-compressor">Source</a>
+        <a href="https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ">Support</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> Open source · Local only</p>
+          <h1>Compress PDFs.<br>Nothing else.</h1>
+          <p class="lede">A tiny macOS utility with one job. Drop in a PDF and get a smaller one—without uploads, accounts, or complicated settings.</p>
+          <div class="hero-actions">
+            <a class="button primary" id="download-button" href="https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.1/FS-PDF-Compressor-1.0.1-arm64.dmg">
+              <span aria-hidden="true">↓</span> Download for Apple Silicon
+            </a>
+            <a class="button secondary" href="https://github.com/gitlares/fs-pdf-compressor">View source</a>
+          </div>
+          <p class="release-meta"><span id="release-version">v1.0.1</span> · macOS 13+ · Apple Silicon · Free forever</p>
+        </div>
+
+        <div class="app-preview" aria-label="FS PDF Compressor application preview">
+          <div class="window-titlebar">
+            <div class="traffic-lights" aria-hidden="true"><i></i><i></i><i></i></div>
+            <strong>FS PDF Compressor</strong>
+            <span></span>
+          </div>
+          <div class="drop-area">
+            <div class="drop-target" aria-hidden="true">
+              <span class="arrow">↓</span>
+            </div>
+          </div>
+          <div class="window-footer">
+            <span class="small-button">＋</span>
+            <span class="footer-copy">Drag PDFs to the area above</span>
+            <span class="checkbox"><i></i> Keep original</span>
+            <span class="again">↻&nbsp; Again</span>
+            <span class="small-button">•••</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="features" aria-label="Features">
+        <article>
+          <span class="feature-number">01</span>
+          <h2>Private by design</h2>
+          <p>Your PDFs never leave your Mac. There is no account, cloud service, analytics, or telemetry.</p>
+        </article>
+        <article>
+          <span class="feature-number">02</span>
+          <h2>One simple job</h2>
+          <p>Drag one PDF, several PDFs, or a folder. Files are replaced only when the result is actually smaller.</p>
+        </article>
+        <article>
+          <span class="feature-number">03</span>
+          <h2>Quality when needed</h2>
+          <p>Balanced by default. Preserve quality or choose maximum compression from one discreet menu.</p>
+        </article>
+      </section>
+
+      <section class="install-card">
+        <div>
+          <p class="eyebrow"><span></span> First launch</p>
+          <h2>One extra click, for now.</h2>
+          <p>The app is open source and ad-hoc signed, but not yet notarized by Apple. After copying it to Applications, Control-click the app, choose <strong>Open</strong>, then confirm once.</p>
+        </div>
+        <ol>
+          <li><span>1</span> Download the DMG</li>
+          <li><span>2</span> Drag the app to Applications</li>
+          <li><span>3</span> Control-click → Open</li>
+        </ol>
+      </section>
+
+      <section class="closing">
+        <img src="https://raw.githubusercontent.com/gitlares/fs-pdf-compressor/main/assets/PDFCompresor.png" alt="FS PDF Compressor" width="96" height="96">
+        <h2>Drag, drop, done.</h2>
+        <p>Free and open source under AGPL-3.0-or-later.</p>
+        <div class="hero-actions centered">
+          <a class="button primary" id="download-button-bottom" href="https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.1/FS-PDF-Compressor-1.0.1-arm64.dmg">↓ Download FS PDF Compressor</a>
+          <a class="button secondary" href="https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ">♥ Support the project</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>© 2026 Daniel Lares</span>
+      <div>
+        <a href="https://github.com/gitlares/fs-pdf-compressor/blob/main/PRIVACY.md">Privacy</a>
+        <a href="https://github.com/gitlares/fs-pdf-compressor/blob/main/LICENSE">License</a>
+        <a href="https://github.com/gitlares/fs-pdf-compressor/releases">Releases</a>
+      </div>
+    </footer>
+  </body>
+</html>

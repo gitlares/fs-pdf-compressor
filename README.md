@@ -9,6 +9,8 @@
 </p>
 
 <p align="center">
+  <a href="https://gitlares.github.io/fs-pdf-compressor/">Website</a>
+  ·
   <a href="https://github.com/gitlares/fs-pdf-compressor/releases/latest">Download</a>
   ·
   <a href="CONTRIBUTING.md">Contribute</a>

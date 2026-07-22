@@ -1,0 +1,23 @@
+# macOS and Python
+.DS_Store
+__pycache__/
+*.py[cod]
+.build-venv/
+.venv/
+
+# PyInstaller and release artifacts
+.pyinstaller-spec/
+.pyinstaller-work/
+build/
+dist/
+release/
+*.spec
+*.dmg
+*.app/
+
+# Generated icon variants
+assets/*.iconset/
+
+# Legacy local prototype; the public release is native_app.py
+compressor_app.py
+setup.py

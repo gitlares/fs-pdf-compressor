@@ -1,0 +1,2 @@
+PyInstaller>=6.0,<7.0
+pyobjc-framework-Cocoa>=10,<13

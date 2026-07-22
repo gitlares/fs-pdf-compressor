@@ -1,0 +1,71 @@
+<p align="center">
+  <img src="assets/PDFCompresor.png" width="160" alt="FS PDF Compressor icon">
+</p>
+
+<h1 align="center">FS PDF Compressor</h1>
+
+<p align="center">
+  Fast and Simple PDF compression for macOS. Drag, drop, done.
+</p>
+
+<p align="center">
+  <a href="https://github.com/gitlares/fs-pdf-compressor/releases/latest">Download</a>
+  ·
+  <a href="CONTRIBUTING.md">Contribute</a>
+  ·
+  <a href="PRIVACY.md">Privacy</a>
+</p>
+
+FS PDF Compressor is a deliberately small, native-feeling macOS utility. It
+compresses PDFs locally with Ghostscript and keeps the technical choices out of
+the way.
+
+## Features
+
+- Drag and drop one PDF, several PDFs, or a folder.
+- Balanced compression by default, with two optional quality profiles.
+- Replaces the original only when the result is smaller.
+- Optional **Keep original** mode creates a separate compressed copy.
+- Processes everything locally: no uploads, accounts, analytics or telemetry.
+- Includes Ghostscript, so end users do not need Homebrew or a separate install.
+
+## Download
+
+Download the latest DMG from [GitHub Releases](https://github.com/gitlares/fs-pdf-compressor/releases/latest).
+
+The v1.0.0 binary supports Apple Silicon and requires macOS 13 or later. It is
+ad-hoc signed but not Apple-notarized. On first launch, macOS may require
+Control-clicking the app and choosing **Open**.
+
+## Build from source
+
+Requirements: Apple Silicon Mac, macOS 13+, Homebrew and Python 3.12.
+
+```shell
+brew install python@3.12 ghostscript
+python3.12 -m venv .build-venv
+.build-venv/bin/python -m pip install -r requirements-build.txt
+.build-venv/bin/python build_macos.py
+```
+
+The app and DMG are written to `release/`. The build bundles Ghostscript and its
+non-system dynamic libraries, copies detected license files, rewrites their
+Mach-O paths, and applies an ad-hoc signature.
+
+## Contributing
+
+Issues, translations, accessibility improvements and focused pull requests are
+welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes. If
+the app is useful to you, starring and sharing the repository also helps.
+
+## Privacy
+
+PDFs never leave your Mac. See the short [privacy statement](PRIVACY.md).
+
+## License
+
+FS PDF Compressor is released under the GNU Affero General Public License v3.0
+or later. The distributed app bundles Ghostscript 10.07.1 under the AGPL and
+other open-source libraries; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Copyright © 2026 Daniel Lares.

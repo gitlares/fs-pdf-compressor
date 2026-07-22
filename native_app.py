@@ -16,26 +16,27 @@ from PyObjCTools import AppHelper
 
 
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 REPOSITORY_URL = "https://github.com/gitlares/fs-pdf-compressor"
 CONTRIBUTE_URL = f"{REPOSITORY_URL}/blob/main/CONTRIBUTING.md"
+DONATE_URL = "https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ"
 
 
 QUALITY_PROFILES = [
     (
-        "Conservar calidad (mínima pérdida)",
+        "Preserve quality (minimal loss)",
         "/prepress",
-        "Conserva resolución y calidad para impresión; el archivo puede reducir poco.",
+        "Keeps print resolution and quality; the file may shrink only slightly.",
     ),
     (
-        "Equilibrado (recomendado)",
+        "Balanced (recommended)",
         "/ebook",
-        "Reduce el tamaño manteniendo una buena calidad en pantalla.",
+        "Reduces file size while keeping good on-screen quality.",
     ),
     (
-        "Máxima compresión",
+        "Maximum compression",
         "/screen",
-        "Reduce más el archivo, con una pérdida visual mayor.",
+        "Creates a smaller file with greater visual quality loss.",
     ),
 ]
 
@@ -46,10 +47,10 @@ def get_file_size_kb(path):
 
 def compressed_copy_path(original_path):
     path = Path(original_path)
-    candidate = path.with_name(f"{path.stem} comprimido{path.suffix}")
+    candidate = path.with_name(f"{path.stem} compressed{path.suffix}")
     sequence = 2
     while candidate.exists():
-        candidate = path.with_name(f"{path.stem} comprimido {sequence}{path.suffix}")
+        candidate = path.with_name(f"{path.stem} compressed {sequence}{path.suffix}")
         sequence += 1
     return str(candidate)
 
@@ -97,7 +98,7 @@ def get_ghostscript_config():
 def compress_pdf(original_path, pdf_settings, keep_original):
     gs_path, gs_environment = get_ghostscript_config()
     if not gs_path:
-        return f"{os.path.basename(original_path)} — Ghostscript no disponible"
+        return f"{os.path.basename(original_path)} — Ghostscript unavailable"
 
     original_size = get_file_size_kb(original_path)
     temp_path = original_path + ".temp.pdf"
@@ -120,12 +121,12 @@ def compress_pdf(original_path, pdf_settings, keep_original):
     if result.returncode != 0 or not os.path.exists(temp_path):
         if os.path.exists(temp_path):
             os.unlink(temp_path)
-        return f"{os.path.basename(original_path)} — no se pudo comprimir"
+        return f"{os.path.basename(original_path)} — compression failed"
 
     new_size = get_file_size_kb(temp_path)
     if new_size >= original_size:
         os.unlink(temp_path)
-        return f"{os.path.basename(original_path)} — sin cambio"
+        return f"{os.path.basename(original_path)} — no size reduction"
 
     output_path = compressed_copy_path(original_path) if keep_original else original_path
     os.replace(temp_path, output_path)
@@ -278,25 +279,25 @@ class PDFCompressorController(FN.NSObject):
         self.add_button.setBezelStyle_(AK.NSBezelStyleRounded)
         self.add_button.setControlSize_(AK.NSControlSizeSmall)
         self.add_button.setImage_(
-            AK.NSImage.imageWithSystemSymbolName_accessibilityDescription_("plus", "Añadir")
+            AK.NSImage.imageWithSystemSymbolName_accessibilityDescription_("plus", "Add")
         )
         self.add_button.setImagePosition_(AK.NSImageOnly)
-        self.add_button.setToolTip_("Elegir archivos PDF")
+        self.add_button.setToolTip_("Choose PDF files")
         self.add_button.setTarget_(self)
         self.add_button.setAction_("chooseFiles:")
         self.footer.addSubview_(self.add_button)
 
-        self.status_label = AK.NSTextField.labelWithString_("Arrastra PDFs al área superior")
+        self.status_label = AK.NSTextField.labelWithString_("Drag PDFs to the area above")
         self.status_label.setFont_(AK.NSFont.systemFontOfSize_(13.0))
         self.status_label.setLineBreakMode_(AK.NSLineBreakByTruncatingTail)
         self.footer.addSubview_(self.status_label)
 
         self.keep_original = AK.NSButton.checkboxWithTitle_target_action_(
-            "Conservar original", self, None
+            "Keep original", self, None
         )
         self.keep_original.setControlSize_(AK.NSControlSizeSmall)
         self.keep_original.setToolTip_(
-            "Guarda “nombre comprimido.pdf” sin modificar el PDF original."
+            "Saves “name compressed.pdf” without modifying the original PDF."
         )
         self.footer.addSubview_(self.keep_original)
 
@@ -310,12 +311,12 @@ class PDFCompressorController(FN.NSObject):
         self.footer.addSubview_(self.progress)
 
         self.again_button = AK.NSButton.alloc().initWithFrame_(AK.NSZeroRect)
-        self.again_button.setTitle_("Otra vez")
+        self.again_button.setTitle_("Again")
         self.again_button.setBezelStyle_(AK.NSBezelStyleRounded)
         self.again_button.setControlSize_(AK.NSControlSizeSmall)
         self.again_button.setImage_(
             AK.NSImage.imageWithSystemSymbolName_accessibilityDescription_(
-                "arrow.clockwise", "Repetir"
+                "arrow.clockwise", "Repeat"
             )
         )
         self.again_button.setImagePosition_(AK.NSImageLeading)
@@ -329,7 +330,7 @@ class PDFCompressorController(FN.NSObject):
         self.options_button.setControlSize_(AK.NSControlSizeSmall)
         self.options_button.setImage_(
             AK.NSImage.imageWithSystemSymbolName_accessibilityDescription_(
-                "ellipsis.circle", "Opciones"
+                "ellipsis.circle", "Options"
             )
         )
         self.options_button.setImagePosition_(AK.NSImageOnly)
@@ -337,7 +338,7 @@ class PDFCompressorController(FN.NSObject):
         self.options_button.setAction_("showOptions:")
         self.footer.addSubview_(self.options_button)
 
-        self.quality_menu = AK.NSMenu.alloc().initWithTitle_("Calidad")
+        self.quality_menu = AK.NSMenu.alloc().initWithTitle_("Quality")
         self.quality_items = []
         for index, (label, _, description) in enumerate(QUALITY_PROFILES):
             item = AK.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
@@ -410,11 +411,11 @@ class PDFCompressorController(FN.NSObject):
 
     def _start_paths(self, paths):
         if self.processing:
-            self.status_label.setStringValue_("Espera a que termine el lote actual")
+            self.status_label.setStringValue_("Wait for the current batch to finish")
             return
         pdfs = self._expand_pdf_paths(paths)
         if not pdfs:
-            self.status_label.setStringValue_("Selecciona archivos PDF")
+            self.status_label.setStringValue_("Choose PDF files")
             return
 
         self.pdf_files = pdfs
@@ -432,7 +433,7 @@ class PDFCompressorController(FN.NSObject):
         if self.processing or not self.pdf_files:
             return
         self.processing = True
-        self.status_label.setStringValue_("Comprimiendo PDFs…")
+        self.status_label.setStringValue_("Compressing PDFs…")
         self.add_button.setEnabled_(False)
         self.keep_original.setEnabled_(False)
         self.again_button.setEnabled_(False)
@@ -464,7 +465,7 @@ class PDFCompressorController(FN.NSObject):
 
     def _finish_compression(self):
         self.processing = False
-        self.status_label.setStringValue_("Listo — arrastra más PDFs")
+        self.status_label.setStringValue_("Done — drag more PDFs")
         self.add_button.setEnabled_(True)
         self.keep_original.setEnabled_(True)
         self.again_button.setEnabled_(bool(self.pdf_files))
@@ -478,7 +479,7 @@ class PDFCompressorController(FN.NSObject):
                 else AK.NSControlStateValueOff
             )
         label, _, _ = QUALITY_PROFILES[self.quality_index]
-        self.options_button.setToolTip_(f"Calidad: {label}")
+        self.options_button.setToolTip_(f"Quality: {label}")
 
     def chooseFiles_(self, sender):
         panel = AK.NSOpenPanel.openPanel()
@@ -486,7 +487,7 @@ class PDFCompressorController(FN.NSObject):
         panel.setCanChooseDirectories_(True)
         panel.setAllowsMultipleSelection_(True)
         panel.setAllowedFileTypes_(["pdf"])
-        panel.setPrompt_("Comprimir")
+        panel.setPrompt_("Compress")
         if panel.runModal() == AK.NSModalResponseOK:
             self._start_paths([str(url.path()) for url in panel.URLs()])
 
@@ -521,26 +522,32 @@ class AppDelegate(FN.NSObject):
 
         application_menu = AK.NSMenu.alloc().initWithTitle_(APP_NAME)
         about_item = AK.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-            f"Acerca de {APP_NAME}", "showAbout:", ""
+            f"About {APP_NAME}", "showAbout:", ""
         )
         about_item.setTarget_(self)
         application_menu.addItem_(about_item)
 
         contribute_item = AK.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-            "Contribuir al proyecto…", "openContribute:", ""
+            "Contribute to the project…", "openContribute:", ""
         )
         contribute_item.setTarget_(self)
         application_menu.addItem_(contribute_item)
+
+        donate_item = AK.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+            "♥ Support the project…", "openDonate:", ""
+        )
+        donate_item.setTarget_(self)
+        application_menu.addItem_(donate_item)
         application_menu.addItem_(AK.NSMenuItem.separatorItem())
 
         hide_item = AK.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-            f"Ocultar {APP_NAME}", "hide:", "h"
+            f"Hide {APP_NAME}", "hide:", "h"
         )
         application_menu.addItem_(hide_item)
         application_menu.addItem_(AK.NSMenuItem.separatorItem())
 
         quit_item = AK.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-            f"Salir de {APP_NAME}", "terminate:", "q"
+            f"Quit {APP_NAME}", "terminate:", "q"
         )
         application_menu.addItem_(quit_item)
         application_item.setSubmenu_(application_menu)
@@ -549,11 +556,12 @@ class AppDelegate(FN.NSObject):
     def showAbout_(self, sender):
         text = (
             "Fast and Simple PDF Compressor\n\n"
-            "Creado porque comprimir un PDF debería ser tan simple como "
-            "arrastrar, soltar y listo.\n\n"
-            "Daniel Lares · 22 de julio de 2026\n\n"
-            "Sin garantía · GNU AGPL v3\n"
-            "Código y contribuciones  ·  Ghostscript 10.07.1"
+            "Created because compressing a PDF should be as simple as "
+            "drag, drop, and done.\n\n"
+            "Daniel Lares · July 22, 2026\n\n"
+            "No warranty · GNU AGPL v3\n"
+            "Source and contributions  ·  ♥ Support the project\n"
+            "Ghostscript 10.07.1"
         )
         credits = FN.NSMutableAttributedString.alloc().initWithString_(text)
         full_range = FN.NSMakeRange(0, len(text))
@@ -574,7 +582,8 @@ class AppDelegate(FN.NSObject):
         )
 
         links = {
-            "Código y contribuciones": REPOSITORY_URL,
+            "Source and contributions": REPOSITORY_URL,
+            "♥ Support the project": DONATE_URL,
             "Ghostscript 10.07.1": "https://ghostscript.com/licensing/",
             "GNU AGPL v3": "https://www.gnu.org/licenses/agpl-3.0.html",
         }
@@ -600,6 +609,11 @@ class AppDelegate(FN.NSObject):
     def openContribute_(self, sender):
         AK.NSWorkspace.sharedWorkspace().openURL_(
             FN.NSURL.URLWithString_(CONTRIBUTE_URL)
+        )
+
+    def openDonate_(self, sender):
+        AK.NSWorkspace.sharedWorkspace().openURL_(
+            FN.NSURL.URLWithString_(DONATE_URL)
         )
 
     def applicationShouldTerminateAfterLastWindowClosed_(self, application):

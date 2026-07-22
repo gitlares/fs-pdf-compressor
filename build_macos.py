@@ -25,7 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 DIST = ROOT / "release"
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 APP = DIST / f"{APP_NAME}.app"
 DMG_NAME = f"FS-PDF-Compressor-{APP_VERSION}-arm64.dmg"
 GHOSTSCRIPT_PREFIX = Path("/opt/homebrew/opt/ghostscript").resolve()
@@ -66,7 +66,7 @@ def bundle_ghostscript() -> None:
     source_gs = GHOSTSCRIPT_PREFIX / "bin" / "gs"
     if not source_gs.is_file():
         raise RuntimeError(
-            "Ghostscript para Apple Silicon no está instalado. Ejecuta: brew install ghostscript"
+            "Ghostscript for Apple Silicon is not installed. Run: brew install ghostscript"
         )
 
     resources = APP / "Contents" / "Resources" / "ghostscript"

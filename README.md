@@ -13,6 +13,8 @@
   ·
   <a href="CONTRIBUTING.md">Contribute</a>
   ·
+  <a href="https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ">♥ Support</a>
+  ·
   <a href="PRIVACY.md">Privacy</a>
 </p>
 
@@ -33,7 +35,7 @@ the way.
 
 Download the latest DMG from [GitHub Releases](https://github.com/gitlares/fs-pdf-compressor/releases/latest).
 
-The v1.0.0 binary supports Apple Silicon and requires macOS 13 or later. It is
+The current binary supports Apple Silicon and requires macOS 13 or later. It is
 ad-hoc signed but not Apple-notarized. On first launch, macOS may require
 Control-clicking the app and choosing **Open**.
 
@@ -57,6 +59,12 @@ Mach-O paths, and applies an ad-hoc signature.
 Issues, translations, accessibility improvements and focused pull requests are
 welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes. If
 the app is useful to you, starring and sharing the repository also helps.
+
+## Support the project
+
+If FS PDF Compressor saves you time, you can support its continued development
+with an optional [PayPal donation](https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ).
+The app remains free and open source for everyone.
 
 ## Privacy
 

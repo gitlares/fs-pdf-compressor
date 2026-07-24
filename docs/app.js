@@ -1,6 +1,6 @@
 const fallback = {
-  version: "v1.0.4",
-  url: "https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.4/FS-PDF-Compressor-1.0.4-arm64.dmg",
+  version: "v1.0.5",
+  url: "https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.5/FS-PDF-Compressor-1.0.5-arm64.dmg",
 };
 
 function applyRelease(release) {

@@ -38,13 +38,13 @@ the way.
 
 Download the latest DMG from [GitHub Releases](https://github.com/gitlares/fs-pdf-compressor/releases/latest).
 
-The current binary supports Apple Silicon and requires macOS 26 or later. It is
+The current binary supports Apple Silicon and requires macOS 14 or later. It is
 Developer ID signed and Apple-notarized, so it opens normally with Gatekeeper
 enabled.
 
 ## Build from source
 
-Requirements: Apple Silicon Mac, macOS 26+, Homebrew and Python 3.12.
+Requirements: Apple Silicon Mac, macOS 14+, Homebrew and Python 3.12.
 
 ```shell
 brew install python@3.12 ghostscript

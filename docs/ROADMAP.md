@@ -1,12 +1,12 @@
 # FS PDF Compressor roadmap
 
-## Planned for 1.0.5 — Apple Silicon macOS 14+ compatibility
+## Completed in 1.0.5 — Apple Silicon macOS 14+ compatibility
 
-- Build the unsigned base application on GitHub's `macos-14` Apple Silicon
+- Built the unsigned base application on GitHub's `macos-14` Apple Silicon
   runner, then audit every bundled Mach-O deployment target.
-- Finalize, Developer ID sign, notarize, and publish the resulting candidate
+- Finalized, Developer ID signed, notarized, and published the resulting candidate
   locally so signing and update keys never leave the Mac.
-- Keep the distribution `arm64` only. Intel support is deliberately out of
+- The distribution remains `arm64` only. Intel support is deliberately out of
   scope for this release.
 
 ## Later — maintainability and reliability

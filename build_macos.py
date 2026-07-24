@@ -5,15 +5,18 @@
 """Build an Apple Silicon FS PDF Compressor.app with embedded Ghostscript.
 
 Run with the project's build virtual environment:
-    .build-venv/bin/python build_macos.py
+    MACOS_SIGNING_IDENTITY="Developer ID Application: ..." \
+        .build-venv/bin/python build_macos.py
 
-The produced app targets Apple Silicon. It applies an ad-hoc signature, but does
-not use a Developer ID certificate or Apple notarization.
+Without ``MACOS_SIGNING_IDENTITY`` the build falls back to an ad-hoc signature
+for local development. Release builds use Developer ID, hardened runtime and a
+secure timestamp. Notarization is performed after the build with ``notarytool``.
 """
 
 from __future__ import annotations
 
 import os
+import json
 import plistlib
 import re
 import shutil
@@ -23,17 +26,33 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
-DIST = ROOT / "release"
+# A test build must never replace an artifact already submitted to Apple.
+# Set DIST_DIR for a separate local build directory (for example, release-test).
+DIST = Path(os.environ.get("DIST_DIR", str(ROOT / "release")))
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = "1.0.1"
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.3")
 APP = DIST / f"{APP_NAME}.app"
 DMG_NAME = f"FS-PDF-Compressor-{APP_VERSION}-arm64.dmg"
 GHOSTSCRIPT_PREFIX = Path("/opt/homebrew/opt/ghostscript").resolve()
+SIGNING_IDENTITY = os.environ.get("MACOS_SIGNING_IDENTITY", "-")
+REPOSITORY_URL = "https://github.com/gitlares/fs-pdf-compressor"
 
 
 def run(*args: str) -> None:
     print("+", " ".join(args))
     subprocess.run(args, check=True)
+
+
+def sign(path: Path, *, hardened: bool = True) -> None:
+    command = ["codesign", "--force", "--sign", SIGNING_IDENTITY]
+    if SIGNING_IDENTITY == "-":
+        command.append("--timestamp=none")
+    else:
+        command.append("--timestamp")
+        if hardened:
+            command.extend(("--options", "runtime"))
+    command.append(str(path))
+    run(*command)
 
 
 def dependencies(path: Path) -> list[tuple[str, Path]]:
@@ -147,6 +166,114 @@ def bundle_homebrew_licenses() -> None:
             shutil.copy2(source, formula_destination / name)
 
 
+def _copy_required_license(destination: Path, candidates: list[Path]) -> None:
+    """Copy the first available license file, failing rather than omitting it."""
+    for source in candidates:
+        if source.is_file():
+            shutil.copy2(source, destination)
+            return
+    names = ", ".join(str(candidate) for candidate in candidates)
+    raise RuntimeError(f"Could not locate required third-party license: {names}")
+
+
+def package_version(package: str) -> str:
+    result = subprocess.run(
+        [sys.executable, "-m", "pip", "show", package],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    for line in result.stdout.splitlines():
+        if line.startswith("Version: "):
+            return line.removeprefix("Version: ")
+    raise RuntimeError(f"Could not determine the installed version of {package}")
+
+
+def bundle_python_runtime_licenses() -> dict[str, str]:
+    """Bundle licenses for runtime components PyInstaller copies into the app."""
+    site_packages = next(
+        (Path(entry) for entry in sys.path if entry.endswith("site-packages")), None
+    )
+    if site_packages is None:
+        raise RuntimeError("Could not locate the build environment site-packages directory")
+
+    destination = APP / "Contents" / "Resources" / "third-party-licenses" / "python-runtime"
+    destination.mkdir(parents=True, exist_ok=True)
+    python_executable = Path(sys.executable).resolve()
+    _copy_required_license(
+        destination / "Python-PSF-LICENSE.txt",
+        [parent / "LICENSE" for parent in python_executable.parents],
+    )
+    _copy_required_license(
+        destination / "PyInstaller-GPL-2.0-with-exception.txt",
+        list(site_packages.glob("pyinstaller-*.dist-info/licenses/COPYING.txt")),
+    )
+    _copy_required_license(
+        destination / "PyObjC-MIT-LICENSE.txt",
+        list(site_packages.glob("pyobjc_framework_cocoa-*.dist-info/licenses/LICENSE.txt")),
+    )
+    return {
+        "python": sys.version.split()[0],
+        "pyinstaller": package_version("PyInstaller"),
+        "pyobjc_core": package_version("pyobjc-core"),
+        "pyobjc_framework_cocoa": package_version("pyobjc-framework-Cocoa"),
+    }
+
+
+def write_compliance_manifest(python_runtime: dict[str, str]) -> None:
+    """Record versions, licenses, and source locations for the exact bundle."""
+    formulae = ["ghostscript"]
+    result = subprocess.run(
+        ["brew", "deps", "--installed", "--formula", "ghostscript"],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    formulae.extend(result.stdout.splitlines())
+    formula_info = subprocess.run(
+        ["brew", "info", "--json=v2", *formulae],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    manifest = json.loads(formula_info.stdout)
+    homebrew = []
+    for formula in manifest["formulae"]:
+        stable = formula.get("urls", {}).get("stable", {})
+        homebrew.append(
+            {
+                "name": formula["name"],
+                "version": formula.get("versions", {}).get("stable"),
+                "license": formula.get("license"),
+                "source_url": stable.get("url"),
+            }
+        )
+
+    source_ref = os.environ.get("SOURCE_REF", f"v{APP_VERSION}")
+    resources = APP / "Contents" / "Resources"
+    (resources / "THIRD_PARTY_MANIFEST.json").write_text(
+        json.dumps(
+            {
+                "application_version": APP_VERSION,
+                "source_ref": source_ref,
+                "python_runtime": python_runtime,
+                "homebrew_dependencies": sorted(homebrew, key=lambda item: item["name"]),
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
+    (resources / "SOURCE_OFFER.md").write_text(
+        "# Corresponding source\n\n"
+        f"This FS PDF Compressor {APP_VERSION} distribution corresponds to source ref "
+        f"`{source_ref}` in:\n\n{REPOSITORY_URL}/tree/{source_ref}\n\n"
+        "The bundled component and Ghostscript dependency versions, licenses, and upstream source URLs are "
+        "listed in `THIRD_PARTY_MANIFEST.json`. The application source and build script "
+        "are distributed under AGPL-3.0-or-later.\n"
+    )
+
+
 def write_info_plist() -> None:
     info_plist = APP / "Contents" / "Info.plist"
     with info_plist.open("rb") as file:
@@ -170,7 +297,7 @@ def main() -> None:
     if os.uname().machine != "arm64":
         raise RuntimeError("Este constructor genera una app Apple Silicon (arm64).")
     shutil.rmtree(DIST, ignore_errors=True)
-    run(
+    pyinstaller = [
         sys.executable,
         "-m",
         "PyInstaller",
@@ -189,11 +316,16 @@ def main() -> None:
         str(ROOT / ".pyinstaller-work"),
         "--specpath",
         str(ROOT / ".pyinstaller-spec"),
-        "native_app.py",
-    )
+    ]
+    if SIGNING_IDENTITY != "-":
+        pyinstaller.extend(("--codesign-identity", SIGNING_IDENTITY))
+    pyinstaller.append("native_app.py")
+    run(*pyinstaller)
     write_info_plist()
     bundle_ghostscript()
     bundle_homebrew_licenses()
+    python_runtime = bundle_python_runtime_licenses()
+    write_compliance_manifest(python_runtime)
     shutil.copy2(ROOT / "LICENSE", APP / "Contents" / "Resources" / "LICENSE.txt")
     shutil.copy2(
         ROOT / "LICENSE",
@@ -206,13 +338,15 @@ def main() -> None:
     ghostscript_bin = APP / "Contents" / "Resources" / "ghostscript" / "bin" / "gs"
     ghostscript_libraries = APP / "Contents" / "Frameworks" / "Ghostscript"
     for binary in [ghostscript_bin, *ghostscript_libraries.glob("*.dylib")]:
-        run("codesign", "--force", "--sign", "-", str(binary))
-    run("codesign", "--force", "--sign", "-", str(APP))
+        sign(binary)
+    sign(APP)
+    run("codesign", "--verify", "--deep", "--strict", "--verbose=2", str(APP))
     dmg_root = DIST / "dmg-root"
     shutil.rmtree(dmg_root, ignore_errors=True)
     dmg_root.mkdir()
     shutil.copytree(APP, dmg_root / APP.name, symlinks=True)
     (dmg_root / "Applications").symlink_to("/Applications")
+    dmg_path = DIST / DMG_NAME
     run(
         "hdiutil",
         "create",
@@ -223,9 +357,12 @@ def main() -> None:
         "-ov",
         "-format",
         "UDZO",
-        str(DIST / DMG_NAME),
+        str(dmg_path),
     )
-    print(f"\nCreated:\n  {APP}\n  {DIST / DMG_NAME}")
+    if SIGNING_IDENTITY != "-":
+        sign(dmg_path, hardened=False)
+        run("codesign", "--verify", "--verbose=2", str(dmg_path))
+    print(f"\nCreated:\n  {APP}\n  {dmg_path}")
 
 
 if __name__ == "__main__":

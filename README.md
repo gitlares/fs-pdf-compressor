@@ -37,13 +37,13 @@ the way.
 
 Download the latest DMG from [GitHub Releases](https://github.com/gitlares/fs-pdf-compressor/releases/latest).
 
-The current binary supports Apple Silicon and requires macOS 13 or later. It is
-ad-hoc signed but not Apple-notarized. On first launch, macOS may require
-Control-clicking the app and choosing **Open**.
+The current binary supports Apple Silicon and requires macOS 26 or later. It is
+Developer ID signed and Apple-notarized, so it opens normally with Gatekeeper
+enabled.
 
 ## Build from source
 
-Requirements: Apple Silicon Mac, macOS 13+, Homebrew and Python 3.12.
+Requirements: Apple Silicon Mac, macOS 26+, Homebrew and Python 3.12.
 
 ```shell
 brew install python@3.12 ghostscript
@@ -53,8 +53,10 @@ python3.12 -m venv .build-venv
 ```
 
 The app and DMG are written to `release/`. The build bundles Ghostscript and its
-non-system dynamic libraries, copies detected license files, rewrites their
-Mach-O paths, and applies an ad-hoc signature.
+non-system dynamic libraries, copies detected license files, and rewrites their
+Mach-O paths. Local builds use an ad-hoc signature unless a Developer ID
+identity is supplied; see [the release guide](docs/RELEASING.md) for the
+notarized distribution workflow.
 
 ## Contributing
 

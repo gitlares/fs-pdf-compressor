@@ -30,7 +30,7 @@ xcrun notarytool store-credentials "FS-PDF-Compressor" \
 
 ```sh
 MACOS_SIGNING_IDENTITY="Developer ID Application: NAME (TEAM_ID)" \
-APP_VERSION="1.0.3" \
+APP_VERSION="1.0.4" \
 .build-venv/bin/python build_macos.py
 ```
 
@@ -41,16 +41,16 @@ and a corresponding-source notice into the application bundle. Set `SOURCE_REF`
 to the Git tag that will identify the exact matching source:
 
 ```sh
-SOURCE_REF="v1.0.3" \
+SOURCE_REF="v1.0.4" \
 MACOS_SIGNING_IDENTITY="Developer ID Application: NAME (TEAM_ID)" \
-APP_VERSION="1.0.3" \
+APP_VERSION="1.0.4" \
 .build-venv/bin/python build_macos.py
 ```
 
 ## Notarize, staple, and verify
 
 ```sh
-DMG="release/FS-PDF-Compressor-1.0.3-arm64.dmg"
+DMG="release/FS-PDF-Compressor-1.0.4-arm64.dmg"
 
 xcrun notarytool submit "$DMG" \
   --keychain-profile "FS-PDF-Compressor" \
@@ -64,6 +64,39 @@ spctl --assess --type open --context context:primary-signature \
 
 Publish only after the submission status is `Accepted`, stapling succeeds, and
 Gatekeeper reports acceptance.
+
+## Secure in-app updates
+
+Release 1.0.4 and later bundle Sparkle. It checks the public `appcast.xml`
+feed once per day and also exposes **Check for Updates…** in the application
+menu. Sparkle only accepts archives signed with the application's EdDSA update
+key and the app itself remains protected by Developer ID signing.
+
+The private EdDSA key stays in the macOS Keychain. Never export it, place it in
+this repository, print it, or generate a replacement key without an explicit
+key-rotation plan. The build script only looks up the existing public half from
+Keychain and places it in the built app's `Info.plist`; it fails rather than
+creating a new key if the Keychain item is missing.
+
+Each release now produces a normal DMG and an update ZIP:
+
+```sh
+ZIP="release/FS-PDF-Compressor-1.0.4-arm64.zip"
+```
+
+After uploading both assets to the matching GitHub Release, generate the
+signed update feed and commit the resulting `docs/appcast.xml`:
+
+```sh
+scripts/generate_appcast.sh 1.0.4
+git add docs/appcast.xml
+git commit -m "Publish 1.0.4 update feed"
+git push
+```
+
+The script uses the private update key directly from Keychain and never writes
+it to disk. Publish the appcast only after the ZIP release asset exists at its
+GitHub URL.
 
 ## Release compliance
 

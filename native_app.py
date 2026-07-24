@@ -17,7 +17,7 @@ from PyObjCTools import AppHelper
 
 
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.3")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.4")
 REPOSITORY_URL = "https://github.com/gitlares/fs-pdf-compressor"
 CONTRIBUTE_URL = f"{REPOSITORY_URL}/blob/main/CONTRIBUTING.md"
 DONATE_URL = "https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ"
@@ -60,6 +60,25 @@ def compression_logger():
     except OSError:
         logger.addHandler(logging.NullHandler())
     return logger
+
+
+def load_sparkle_updater():
+    """Load the bundled Sparkle framework without making it a Python dependency."""
+    contents_dir = bundle_contents_dir()
+    if contents_dir is None:
+        return None
+    framework = contents_dir / "Frameworks" / "Sparkle.framework"
+    if not framework.is_dir():
+        return None
+    try:
+        objc.loadBundle("Sparkle", globals(), bundle_path=str(framework))
+        controller_class = objc.lookUpClass("SPUStandardUpdaterController")
+        return controller_class.alloc().initWithStartingUpdater_updaterDelegate_userDriverDelegate_(
+            True, None, None
+        )
+    except Exception:
+        compression_logger().exception("Could not initialize the Sparkle updater")
+        return None
 
 
 def get_file_size_kb(path):
@@ -660,6 +679,7 @@ class PDFCompressorController(FN.NSObject):
 class AppDelegate(FN.NSObject):
     def applicationDidFinishLaunching_(self, notification):
         self._build_main_menu()
+        self.updater_controller = load_sparkle_updater()
         self.controller = PDFCompressorController.alloc().init()
         self.controller.window.makeKeyAndOrderFront_(None)
         AK.NSApp.activateIgnoringOtherApps_(True)
@@ -687,6 +707,13 @@ class AppDelegate(FN.NSObject):
         )
         donate_item.setTarget_(self)
         application_menu.addItem_(donate_item)
+        application_menu.addItem_(AK.NSMenuItem.separatorItem())
+
+        update_item = AK.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+            "Check for Updates…", "checkForUpdates:", ""
+        )
+        update_item.setTarget_(self)
+        application_menu.addItem_(update_item)
         application_menu.addItem_(AK.NSMenuItem.separatorItem())
 
         hide_item = AK.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
@@ -764,6 +791,18 @@ class AppDelegate(FN.NSObject):
         AK.NSWorkspace.sharedWorkspace().openURL_(
             FN.NSURL.URLWithString_(DONATE_URL)
         )
+
+    def checkForUpdates_(self, sender):
+        if self.updater_controller is None:
+            alert = AK.NSAlert.alloc().init()
+            alert.setMessageText_("Updates are unavailable")
+            alert.setInformativeText_(
+                "The bundled updater could not be loaded. Download the latest version "
+                "from the FS PDF Compressor website."
+            )
+            alert.runModal()
+            return
+        self.updater_controller.checkForUpdates_(sender)
 
     def applicationShouldTerminateAfterLastWindowClosed_(self, application):
         return True

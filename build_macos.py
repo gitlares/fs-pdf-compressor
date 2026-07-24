@@ -17,11 +17,14 @@ from __future__ import annotations
 
 import os
 import json
+import hashlib
 import plistlib
 import re
 import shutil
 import subprocess
 import sys
+import tarfile
+import urllib.request
 from pathlib import Path
 
 
@@ -30,12 +33,20 @@ ROOT = Path(__file__).resolve().parent
 # Set DIST_DIR for a separate local build directory (for example, release-test).
 DIST = Path(os.environ.get("DIST_DIR", str(ROOT / "release")))
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.3")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.4")
 APP = DIST / f"{APP_NAME}.app"
 DMG_NAME = f"FS-PDF-Compressor-{APP_VERSION}-arm64.dmg"
 GHOSTSCRIPT_PREFIX = Path("/opt/homebrew/opt/ghostscript").resolve()
 SIGNING_IDENTITY = os.environ.get("MACOS_SIGNING_IDENTITY", "-")
 REPOSITORY_URL = "https://github.com/gitlares/fs-pdf-compressor"
+SPARKLE_VERSION = "2.9.4"
+SPARKLE_ARCHIVE_URL = (
+    "https://github.com/sparkle-project/Sparkle/releases/download/"
+    f"{SPARKLE_VERSION}/Sparkle-{SPARKLE_VERSION}.tar.xz"
+)
+SPARKLE_ARCHIVE_SHA256 = "ce89daf967db1e1893ed3ebd67575ed82d3902563e3191ca92aaec9164fbdef9"
+SPARKLE_CACHE = Path.home() / "Library" / "Caches" / APP_NAME / f"Sparkle-{SPARKLE_VERSION}"
+SPARKLE_FEED_URL = "https://gitlares.github.io/fs-pdf-compressor/appcast.xml"
 
 
 def run(*args: str) -> None:
@@ -53,6 +64,67 @@ def sign(path: Path, *, hardened: bool = True) -> None:
             command.extend(("--options", "runtime"))
     command.append(str(path))
     run(*command)
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _extract_sparkle(archive: Path, destination: Path) -> None:
+    with tarfile.open(archive, "r:xz") as package:
+        root = destination.resolve()
+        for member in package.getmembers():
+            target = (root / member.name).resolve()
+            if target != root and root not in target.parents:
+                raise RuntimeError("Refusing an unsafe path in the Sparkle archive")
+        package.extractall(destination)
+
+
+def ensure_sparkle_distribution() -> Path:
+    """Fetch the pinned Sparkle framework without placing it in Git."""
+    framework = SPARKLE_CACHE / "Sparkle.framework"
+    if framework.is_dir():
+        return framework
+
+    SPARKLE_CACHE.mkdir(parents=True, exist_ok=True)
+    archive = SPARKLE_CACHE / f"Sparkle-{SPARKLE_VERSION}.tar.xz"
+    if not archive.is_file():
+        print(f"+ download Sparkle {SPARKLE_VERSION}")
+        urllib.request.urlretrieve(SPARKLE_ARCHIVE_URL, archive)
+    if _sha256(archive) != SPARKLE_ARCHIVE_SHA256:
+        raise RuntimeError("Sparkle archive checksum did not match the pinned release")
+    _extract_sparkle(archive, SPARKLE_CACHE)
+    if not framework.is_dir():
+        raise RuntimeError("The pinned Sparkle archive did not contain Sparkle.framework")
+    return framework
+
+
+def sparkle_public_key() -> str:
+    """Read the public half of the existing Sparkle key from the Keychain."""
+    distribution = ensure_sparkle_distribution()
+    command = distribution.parent / "bin" / "generate_keys"
+    result = subprocess.run([str(command), "-p"], check=True, text=True, capture_output=True)
+    public_key = result.stdout.strip()
+    if not re.fullmatch(r"[A-Za-z0-9+/]{43}=", public_key):
+        raise RuntimeError("Could not read the existing Sparkle public key from Keychain")
+    return public_key
+
+
+def bundle_sparkle() -> Path:
+    framework = ensure_sparkle_distribution()
+    destination = APP / "Contents" / "Frameworks" / "Sparkle.framework"
+    shutil.copytree(framework, destination, symlinks=True)
+    license_source = SPARKLE_CACHE / "LICENSE"
+    if not license_source.is_file():
+        raise RuntimeError("Could not locate Sparkle's MIT license")
+    license_destination = APP / "Contents" / "Resources" / "third-party-licenses" / "sparkle"
+    license_destination.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(license_source, license_destination / "MIT-LICENSE.txt")
+    return destination
 
 
 def dependencies(path: Path) -> list[tuple[str, Path]]:
@@ -274,7 +346,7 @@ def write_compliance_manifest(python_runtime: dict[str, str]) -> None:
     )
 
 
-def write_info_plist() -> None:
+def write_info_plist(update_public_key: str) -> None:
     info_plist = APP / "Contents" / "Info.plist"
     with info_plist.open("rb") as file:
         info = plistlib.load(file)
@@ -287,6 +359,11 @@ def write_info_plist() -> None:
             "NSHumanReadableCopyright": "© 2026 Daniel Lares",
             "LSApplicationCategoryType": "public.app-category.utilities",
             "LSMinimumSystemVersion": "13.0",
+            "SUFeedURL": SPARKLE_FEED_URL,
+            "SUPublicEDKey": update_public_key,
+            "SUEnableAutomaticChecks": True,
+            "SUScheduledCheckInterval": 86400,
+            "SUAutomaticallyUpdate": False,
         }
     )
     with info_plist.open("wb") as file:
@@ -321,7 +398,9 @@ def main() -> None:
         pyinstaller.extend(("--codesign-identity", SIGNING_IDENTITY))
     pyinstaller.append("native_app.py")
     run(*pyinstaller)
-    write_info_plist()
+    update_public_key = sparkle_public_key()
+    write_info_plist(update_public_key)
+    sparkle_framework = bundle_sparkle()
     bundle_ghostscript()
     bundle_homebrew_licenses()
     python_runtime = bundle_python_runtime_licenses()
@@ -339,8 +418,11 @@ def main() -> None:
     ghostscript_libraries = APP / "Contents" / "Frameworks" / "Ghostscript"
     for binary in [ghostscript_bin, *ghostscript_libraries.glob("*.dylib")]:
         sign(binary)
+    sign(sparkle_framework)
     sign(APP)
     run("codesign", "--verify", "--deep", "--strict", "--verbose=2", str(APP))
+    update_zip = DIST / f"FS-PDF-Compressor-{APP_VERSION}-arm64.zip"
+    run("ditto", "-c", "-k", "--keepParent", str(APP), str(update_zip))
     dmg_root = DIST / "dmg-root"
     shutil.rmtree(dmg_root, ignore_errors=True)
     dmg_root.mkdir()
@@ -362,7 +444,7 @@ def main() -> None:
     if SIGNING_IDENTITY != "-":
         sign(dmg_path, hardened=False)
         run("codesign", "--verify", "--verbose=2", str(dmg_path))
-    print(f"\nCreated:\n  {APP}\n  {dmg_path}")
+    print(f"\nCreated:\n  {APP}\n  {dmg_path}\n  {update_zip}")
 
 
 if __name__ == "__main__":

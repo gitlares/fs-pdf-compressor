@@ -36,6 +36,14 @@ bootloader. Their license texts are included under
 - PyObjC: https://github.com/ronaldoussoren/pyobjc
 - PyInstaller: https://pyinstaller.org/en/stable/license.html
 
+## Sparkle updater
+
+FS PDF Compressor bundles Sparkle 2.9.4 for signed in-app updates. Sparkle is
+licensed under the MIT License. Its license text is included at
+`Contents/Resources/third-party-licenses/sparkle/MIT-LICENSE.txt`.
+
+Source and release information: https://github.com/sparkle-project/Sparkle
+
 ## Homebrew libraries
 
 Ghostscript dynamically depends on additional open-source libraries distributed

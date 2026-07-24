@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>FS PDF Compressor updates</title>
+    <link>https://gitlares.github.io/fs-pdf-compressor/</link>
+    <description>Signed updates for FS PDF Compressor.</description>
+  </channel>
+</rss>

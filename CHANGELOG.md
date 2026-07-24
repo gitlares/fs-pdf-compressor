@@ -1,6 +1,14 @@
 # Changelog
 
-## 1.0.3 — Unreleased
+## 1.0.4 — Unreleased
+
+- Added Sparkle-based in-app update checks, protected by a dedicated EdDSA
+  update-signing key stored only in the macOS Keychain.
+- Added **Check for Updates…** to the application menu.
+- Added a signed update-feed workflow and a separately distributable update
+  ZIP alongside the normal DMG.
+
+## 1.0.3 — 2026-07-23
 
 - Replaced the plain-text completion output with a compact, native-style results
   table that keeps filenames and reductions aligned.

@@ -33,9 +33,13 @@ jobs:
         run: .build-venv/bin/python build_macos.py
       - name: Audit every bundled Mach-O target
         run: scripts/audit_macos_target.py --maximum 14.0 "ci-build/FS PDF Compressor.app"
+      - name: Archive candidate without changing macOS links
+        run: |
+          tar -czf "ci-build/fs-pdf-compressor-${{ inputs.version }}-macos14-arm64-unsigned.tar.gz" \
+            -C ci-build "FS PDF Compressor.app"
       - name: Upload unsigned compatibility candidate
         uses: actions/upload-artifact@v4
         with:
           name: fs-pdf-compressor-${{ inputs.version }}-macos14-arm64-unsigned
-          path: ci-build/FS PDF Compressor.app
+          path: ci-build/fs-pdf-compressor-${{ inputs.version }}-macos14-arm64-unsigned.tar.gz
           if-no-files-found: error

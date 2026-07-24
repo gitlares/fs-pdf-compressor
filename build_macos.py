@@ -54,7 +54,9 @@ def run(*args: str) -> None:
     subprocess.run(args, check=True)
 
 
-def sign(path: Path, *, hardened: bool = True) -> None:
+def sign(
+    path: Path, *, hardened: bool = True, preserve_entitlements: bool = False
+) -> None:
     command = ["codesign", "--force", "--sign", SIGNING_IDENTITY]
     if SIGNING_IDENTITY == "-":
         command.append("--timestamp=none")
@@ -62,6 +64,8 @@ def sign(path: Path, *, hardened: bool = True) -> None:
         command.append("--timestamp")
         if hardened:
             command.extend(("--options", "runtime"))
+    if preserve_entitlements:
+        command.append("--preserve-metadata=entitlements")
     command.append(str(path))
     run(*command)
 
@@ -125,6 +129,21 @@ def bundle_sparkle() -> Path:
     license_destination.mkdir(parents=True, exist_ok=True)
     shutil.copy2(license_source, license_destination / "MIT-LICENSE.txt")
     return destination
+
+
+def sign_sparkle_framework(framework: Path) -> None:
+    """Re-sign Sparkle's nested helpers bottom-up for notarization.
+
+    Sparkle distributes its helpers with ad-hoc signatures. Unlike Xcode's
+    Archive/Export path, this custom build must explicitly sign each helper.
+    """
+    version = framework / "Versions" / "Current"
+    services = version / "XPCServices"
+    sign(services / "Installer.xpc")
+    sign(services / "Downloader.xpc", preserve_entitlements=True)
+    sign(version / "Autoupdate")
+    sign(version / "Updater.app")
+    sign(framework)
 
 
 def dependencies(path: Path) -> list[tuple[str, Path]]:
@@ -418,7 +437,7 @@ def main() -> None:
     ghostscript_libraries = APP / "Contents" / "Frameworks" / "Ghostscript"
     for binary in [ghostscript_bin, *ghostscript_libraries.glob("*.dylib")]:
         sign(binary)
-    sign(sparkle_framework)
+    sign_sparkle_framework(sparkle_framework)
     sign(APP)
     run("codesign", "--verify", "--deep", "--strict", "--verbose=2", str(APP))
     update_zip = DIST / f"FS-PDF-Compressor-{APP_VERSION}-arm64.zip"

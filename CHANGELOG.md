@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.5 — 2026-07-23
+
+- Expanded the public Apple Silicon distribution to **macOS 14 (Sonoma) and
+  later**. Intel Macs remain unsupported.
+- Added a macOS 14 GitHub Actions build pipeline that audits every bundled
+  Mach-O file before a compatibility release is finalized locally.
+- Preserved macOS links in the CI handoff archive and re-sign every embedded
+  executable with Developer ID and a secure timestamp before notarization.
+- Published a notarized, stapled DMG accepted by Gatekeeper, plus the signed
+  Sparkle update archive and 1.0.5 update-feed entry.
+- Updated the website, download fallback, README, and roadmap to reflect the
+  1.0.5 release and macOS 14+ Apple Silicon support.
+
 ## 1.0.4 — 2026-07-23
 
 - Added Sparkle-based in-app update checks, protected by a dedicated EdDSA

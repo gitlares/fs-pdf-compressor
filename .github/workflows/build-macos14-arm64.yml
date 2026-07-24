@@ -1,0 +1,41 @@
+name: Build macOS 14 Apple Silicon candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to assemble (for example, 1.0.5)
+        required: true
+        default: "1.0.5"
+
+permissions:
+  contents: read
+
+jobs:
+  assemble:
+    runs-on: macos-14
+    env:
+      APP_VERSION: ${{ inputs.version }}
+      SOURCE_REF: ${{ github.sha }}
+      MACOSX_DEPLOYMENT_TARGET: "14.0"
+      MACOS_MINIMUM_VERSION: "14.0"
+      FS_COMPRESSOR_BUILD_STAGE: assemble
+      DIST_DIR: ci-build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Apple Silicon dependencies
+        run: |
+          brew install ghostscript python@3.12
+          python3.12 -m venv .build-venv
+          .build-venv/bin/python -m pip install --upgrade pip
+          .build-venv/bin/python -m pip install -r requirements-build.txt
+      - name: Assemble unsigned candidate
+        run: .build-venv/bin/python build_macos.py
+      - name: Audit every bundled Mach-O target
+        run: scripts/audit_macos_target.py --maximum 14.0 "ci-build/FS PDF Compressor.app"
+      - name: Upload unsigned compatibility candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: fs-pdf-compressor-${{ inputs.version }}-macos14-arm64-unsigned
+          path: ci-build/FS PDF Compressor.app
+          if-no-files-found: error

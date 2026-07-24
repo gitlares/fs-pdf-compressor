@@ -1,6 +1,15 @@
 # FS PDF Compressor roadmap
 
-## Planned for 1.0.5 — maintainability and reliability
+## Planned for 1.0.5 — Apple Silicon macOS 14+ compatibility
+
+- Build the unsigned base application on GitHub's `macos-14` Apple Silicon
+  runner, then audit every bundled Mach-O deployment target.
+- Finalize, Developer ID sign, notarize, and publish the resulting candidate
+  locally so signing and update keys never leave the Mac.
+- Keep the distribution `arm64` only. Intel support is deliberately out of
+  scope for this release.
+
+## Later — maintainability and reliability
 
 - Split the application controller into focused modules for AppKit views, batch
   state, and Ghostscript compression.

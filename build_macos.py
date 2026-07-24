@@ -33,7 +33,7 @@ ROOT = Path(__file__).resolve().parent
 # Set DIST_DIR for a separate local build directory (for example, release-test).
 DIST = Path(os.environ.get("DIST_DIR", str(ROOT / "release")))
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.4")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.5")
 APP = DIST / f"{APP_NAME}.app"
 DMG_NAME = f"FS-PDF-Compressor-{APP_VERSION}-arm64.dmg"
 GHOSTSCRIPT_PREFIX = Path("/opt/homebrew/opt/ghostscript").resolve()
@@ -47,6 +47,9 @@ SPARKLE_ARCHIVE_URL = (
 SPARKLE_ARCHIVE_SHA256 = "ce89daf967db1e1893ed3ebd67575ed82d3902563e3191ca92aaec9164fbdef9"
 SPARKLE_CACHE = Path.home() / "Library" / "Caches" / APP_NAME / f"Sparkle-{SPARKLE_VERSION}"
 SPARKLE_FEED_URL = "https://gitlares.github.io/fs-pdf-compressor/appcast.xml"
+MINIMUM_SYSTEM_VERSION = os.environ.get("MACOS_MINIMUM_VERSION", "26.0")
+BUILD_STAGE = os.environ.get("FS_COMPRESSOR_BUILD_STAGE", "release")
+SOURCE_APP = os.environ.get("FS_COMPRESSOR_SOURCE_APP")
 
 
 def run(*args: str) -> None:
@@ -365,7 +368,7 @@ def write_compliance_manifest(python_runtime: dict[str, str]) -> None:
     )
 
 
-def write_info_plist(update_public_key: str) -> None:
+def write_info_plist(update_public_key: str | None) -> None:
     info_plist = APP / "Contents" / "Info.plist"
     with info_plist.open("rb") as file:
         info = plistlib.load(file)
@@ -377,22 +380,38 @@ def write_info_plist(update_public_key: str) -> None:
             "CFBundleVersion": APP_VERSION,
             "NSHumanReadableCopyright": "© 2026 Daniel Lares",
             "LSApplicationCategoryType": "public.app-category.utilities",
-            "LSMinimumSystemVersion": "13.0",
-            "SUFeedURL": SPARKLE_FEED_URL,
-            "SUPublicEDKey": update_public_key,
-            "SUEnableAutomaticChecks": True,
-            "SUScheduledCheckInterval": 86400,
-            "SUAutomaticallyUpdate": False,
+            "LSMinimumSystemVersion": MINIMUM_SYSTEM_VERSION,
         }
     )
+    if update_public_key is None:
+        for key in (
+            "SUFeedURL",
+            "SUPublicEDKey",
+            "SUEnableAutomaticChecks",
+            "SUScheduledCheckInterval",
+            "SUAutomaticallyUpdate",
+        ):
+            info.pop(key, None)
+    else:
+        info.update(
+            {
+                "SUFeedURL": SPARKLE_FEED_URL,
+                "SUPublicEDKey": update_public_key,
+                "SUEnableAutomaticChecks": True,
+                "SUScheduledCheckInterval": 86400,
+                "SUAutomaticallyUpdate": False,
+            }
+        )
     with info_plist.open("wb") as file:
         plistlib.dump(info, file)
 
 
-def main() -> None:
-    if os.uname().machine != "arm64":
-        raise RuntimeError("Este constructor genera una app Apple Silicon (arm64).")
+def prepare_output_directory() -> None:
     shutil.rmtree(DIST, ignore_errors=True)
+    DIST.mkdir(parents=True, exist_ok=True)
+
+
+def build_base_application() -> None:
     pyinstaller = [
         sys.executable,
         "-m",
@@ -417,9 +436,7 @@ def main() -> None:
         pyinstaller.extend(("--codesign-identity", SIGNING_IDENTITY))
     pyinstaller.append("native_app.py")
     run(*pyinstaller)
-    update_public_key = sparkle_public_key()
-    write_info_plist(update_public_key)
-    sparkle_framework = bundle_sparkle()
+    write_info_plist(None)
     bundle_ghostscript()
     bundle_homebrew_licenses()
     python_runtime = bundle_python_runtime_licenses()
@@ -430,13 +447,25 @@ def main() -> None:
         APP / "Contents" / "Resources" / "ghostscript" / "AGPL-3.0.txt",
     )
     shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", APP / "Contents" / "Resources")
-    # Resources/ghostscript/bin is not a standard macOS nested-code location,
-    # therefore `codesign --deep` does not re-sign gs after install_name_tool.
-    # Sign modified Mach-O files first, then seal the outer app bundle.
+    sign_ghostscript_components()
+    sign(APP)
+    run("codesign", "--verify", "--deep", "--strict", "--verbose=2", str(APP))
+
+
+def sign_ghostscript_components() -> None:
+    """Sign Ghostscript after its install names have been rewritten."""
     ghostscript_bin = APP / "Contents" / "Resources" / "ghostscript" / "bin" / "gs"
     ghostscript_libraries = APP / "Contents" / "Frameworks" / "Ghostscript"
     for binary in [ghostscript_bin, *ghostscript_libraries.glob("*.dylib")]:
         sign(binary)
+
+
+def finalize_application() -> None:
+    """Add Keychain-backed update support, then seal and package the app."""
+    update_public_key = sparkle_public_key()
+    write_info_plist(update_public_key)
+    sparkle_framework = bundle_sparkle()
+    sign_ghostscript_components()
     sign_sparkle_framework(sparkle_framework)
     sign(APP)
     run("codesign", "--verify", "--deep", "--strict", "--verbose=2", str(APP))
@@ -464,6 +493,32 @@ def main() -> None:
         sign(dmg_path, hardened=False)
         run("codesign", "--verify", "--verbose=2", str(dmg_path))
     print(f"\nCreated:\n  {APP}\n  {dmg_path}\n  {update_zip}")
+
+
+def main() -> None:
+    if os.uname().machine != "arm64":
+        raise RuntimeError("Este constructor genera una app Apple Silicon (arm64).")
+    if BUILD_STAGE not in {"assemble", "finalize", "release"}:
+        raise RuntimeError("FS_COMPRESSOR_BUILD_STAGE must be assemble, finalize, or release")
+
+    prepare_output_directory()
+    if BUILD_STAGE == "assemble":
+        if SIGNING_IDENTITY != "-":
+            raise RuntimeError("The assemble stage must use an ad-hoc signature")
+        build_base_application()
+        print(f"\nCreated unsigned compatibility candidate:\n  {APP}")
+        return
+
+    if BUILD_STAGE == "finalize":
+        if not SOURCE_APP:
+            raise RuntimeError("FS_COMPRESSOR_SOURCE_APP is required for the finalize stage")
+        source_app = Path(SOURCE_APP).expanduser().resolve()
+        if not source_app.is_dir() or source_app.name != APP.name:
+            raise RuntimeError(f"Expected an app bundle named {APP.name}: {source_app}")
+        shutil.copytree(source_app, APP, symlinks=True)
+    else:
+        build_base_application()
+    finalize_application()
 
 
 if __name__ == "__main__":

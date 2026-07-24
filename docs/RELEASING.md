@@ -28,6 +28,30 @@ xcrun notarytool store-credentials "FS-PDF-Compressor" \
 
 ## Build and sign
 
+### macOS 14+ Apple Silicon releases
+
+For 1.0.5 and later compatibility releases, manually run the **Build macOS 14
+Apple Silicon candidate** GitHub Actions workflow. It creates an unsigned app
+and fails if any bundled Mach-O requires macOS newer than 14. Download the
+artifact without modifying its contents, then finalize it locally with the
+Developer ID and Sparkle keys still held in macOS Keychain:
+
+```sh
+FS_COMPRESSOR_BUILD_STAGE="finalize" \
+FS_COMPRESSOR_SOURCE_APP="/absolute/path/to/FS PDF Compressor.app" \
+DIST_DIR="release-1.0.5" \
+SOURCE_REF="v1.0.5" \
+APP_VERSION="1.0.5" \
+MACOS_MINIMUM_VERSION="14.0" \
+MACOS_SIGNING_IDENTITY="Developer ID Application: NAME (TEAM_ID)" \
+.build-venv/bin/python build_macos.py
+```
+
+Never send Developer ID certificates, notarization credentials, or Sparkle
+keys to GitHub Actions. The CI artifact is only an unsigned base app.
+
+### Local builds
+
 ```sh
 MACOS_SIGNING_IDENTITY="Developer ID Application: NAME (TEAM_ID)" \
 APP_VERSION="1.0.4" \

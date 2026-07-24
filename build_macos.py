@@ -460,11 +460,37 @@ def sign_ghostscript_components() -> None:
         sign(binary)
 
 
+def sign_embedded_macho_components() -> None:
+    """Replace CI's ad-hoc signatures on every bundled executable component."""
+    seen: set[Path] = set()
+    candidates = sorted(
+        (path for path in (APP / "Contents").rglob("*") if path.is_file()),
+        key=lambda path: len(path.parts),
+        reverse=True,
+    )
+    for candidate in candidates:
+        if candidate.is_symlink():
+            continue
+        resolved = candidate.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        result = subprocess.run(
+            ["file", "-b", str(candidate)],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if b"Mach-O" in result.stdout:
+            sign(candidate)
+
+
 def finalize_application() -> None:
     """Add Keychain-backed update support, then seal and package the app."""
     update_public_key = sparkle_public_key()
     write_info_plist(update_public_key)
     sparkle_framework = bundle_sparkle()
+    sign_embedded_macho_components()
     sign_ghostscript_components()
     sign_sparkle_framework(sparkle_framework)
     sign(APP)

@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.4 — Unreleased
+## 1.0.4 — 2026-07-23
 
 - Added Sparkle-based in-app update checks, protected by a dedicated EdDSA
   update-signing key stored only in the macOS Keychain.

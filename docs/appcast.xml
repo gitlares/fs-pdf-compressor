@@ -1,8 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
-  <channel>
-    <title>FS PDF Compressor updates</title>
-    <link>https://gitlares.github.io/fs-pdf-compressor/</link>
-    <description>Signed updates for FS PDF Compressor.</description>
-  </channel>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>FS PDF Compressor updates</title>
+        <link>https://gitlares.github.io/fs-pdf-compressor/</link>
+        <description>Signed updates for FS PDF Compressor.</description>
+        <item>
+            <title>1.0.4</title>
+            <pubDate>Thu, 23 Jul 2026 21:31:19 -0600</pubDate>
+            <link>https://gitlares.github.io/fs-pdf-compressor/</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.4</sparkle:fullReleaseNotesLink>
+            <sparkle:version>1.0.4</sparkle:version>
+            <sparkle:shortVersionString>1.0.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.4/FS-PDF-Compressor-1.0.4-arm64.zip" length="33407298" type="application/octet-stream" sparkle:edSignature="PRYvLXobZL3YA/6wyXu8nvvPuwzkgYjVZAOE8yU4jTaICZuAue7MzTUgX4rSoxbd5r/fKHci2yOzEVXAu9nzBw=="/>
+        </item>
+    </channel>
 </rss>

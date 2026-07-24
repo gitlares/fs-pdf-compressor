@@ -23,7 +23,6 @@ if [[ ! -f "$ARCHIVE" ]]; then
   print -u2 "Missing update ZIP: $ARCHIVE"
   exit 1
 fi
-
 WORK_DIR="$(mktemp -d /tmp/fs-pdf-appcast.XXXXXX)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 cp "$ARCHIVE" "$WORK_DIR/"
@@ -34,7 +33,7 @@ cp "$ROOT/docs/appcast.xml" "$WORK_DIR/appcast.xml"
   --full-release-notes-url "$RELEASE_URL" \
   --link "https://gitlares.github.io/fs-pdf-compressor/" \
   --versions "$VERSION" \
-  -o appcast.xml \
+  -o "$WORK_DIR/appcast.xml" \
   "$WORK_DIR"
 
 cp "$WORK_DIR/appcast.xml" "$ROOT/docs/appcast.xml"

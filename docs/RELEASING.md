@@ -94,9 +94,11 @@ git commit -m "Publish 1.0.4 update feed"
 git push
 ```
 
-The script uses the private update key directly from Keychain and never writes
-it to disk. Publish the appcast only after the ZIP release asset exists at its
-GitHub URL.
+The script uses the private update key directly from the macOS login Keychain
+and never writes it to disk. The first invocation may ask macOS for permission
+to let `generate_appcast` use the key; approve that access without revealing or
+exporting the key. Publish the appcast only after the ZIP release asset exists
+at its GitHub URL.
 
 ## Release compliance
 

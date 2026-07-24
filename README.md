@@ -20,6 +20,10 @@
   <a href="PRIVACY.md">Privacy</a>
 </p>
 
+<p align="center">
+  <img src="assets/fs-pdf-compressor-demo.gif" width="800" alt="Dragging a PDF from Finder into FS PDF Compressor">
+</p>
+
 FS PDF Compressor — **Fast & Simple PDF Compressor** — is a deliberately
 small, native-feeling macOS utility. It
 compresses PDFs locally with Ghostscript and keeps the technical choices out of

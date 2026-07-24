@@ -5,7 +5,7 @@
 <h1 align="center">FS PDF Compressor</h1>
 
 <p align="center">
-  Fast and Simple PDF compression for macOS. Drag, drop, done.
+  FS means Fast &amp; Simple: PDF compression for macOS. Drag, drop, done.
 </p>
 
 <p align="center">
@@ -20,7 +20,8 @@
   <a href="PRIVACY.md">Privacy</a>
 </p>
 
-FS PDF Compressor is a deliberately small, native-feeling macOS utility. It
+FS PDF Compressor — **Fast & Simple PDF Compressor** — is a deliberately
+small, native-feeling macOS utility. It
 compresses PDFs locally with Ghostscript and keeps the technical choices out of
 the way.
 

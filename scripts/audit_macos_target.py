@@ -13,7 +13,17 @@ def version(value: str) -> tuple[int, ...]:
 
 
 def command_output(*args: str) -> str:
-    return subprocess.run(args, check=True, text=True, capture_output=True).stdout
+    # Python packages can contain resource names outside UTF-8.  `file` may
+    # echo one of those names, but that should not make the deployment-target
+    # audit itself fail.
+    return subprocess.run(
+        args,
+        check=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+    ).stdout
 
 
 def is_macho(path: Path) -> bool:

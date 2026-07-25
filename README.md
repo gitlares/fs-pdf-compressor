@@ -5,7 +5,7 @@
 <h1 align="center">FS PDF Compressor</h1>
 
 <p align="center">
-  FS means Fast &amp; Simple: PDF compression for macOS. Drag, drop, done.
+  FS means Fast &amp; Simple: local PDF compression. Drag, drop, done.
 </p>
 
 <p align="center">
@@ -25,9 +25,8 @@
 </p>
 
 FS PDF Compressor — **Fast & Simple PDF Compressor** — is a deliberately
-small, native-feeling macOS utility. It
-compresses PDFs locally with Ghostscript and keeps the technical choices out of
-the way.
+small desktop utility for macOS and Linux. It compresses PDFs locally with
+Ghostscript and keeps the technical choices out of the way.
 
 ## Features
 
@@ -40,7 +39,7 @@ the way.
 
 ## Download
 
-Download the latest DMG from [GitHub Releases](https://github.com/gitlares/fs-pdf-compressor/releases/latest).
+Download the latest release from [GitHub Releases](https://github.com/gitlares/fs-pdf-compressor/releases/latest).
 
 The current binary supports Apple Silicon and requires macOS 14 or later. It is
 Developer ID signed and Apple-notarized, so it opens normally with Gatekeeper
@@ -62,6 +61,20 @@ non-system dynamic libraries, copies detected license files, and rewrites their
 Mach-O paths. Local builds use an ad-hoc signature unless a Developer ID
 identity is supplied; see [the release guide](docs/RELEASING.md) for the
 notarized distribution workflow.
+
+### Linux
+
+The Linux edition is developed in this same repository. It uses the same
+compression engine and profiles, with a Qt interface designed to match the
+macOS app. The x86_64 AppImage bundles Ghostscript and has an in-app update
+check; see [Linux instructions](docs/LINUX.md).
+
+## Acknowledgements
+
+The Linux edition is distributed as an [AppImage](https://appimage.org/). Thank
+you to Simon Peter and the AppImage project for a philosophy that fits this
+application: less software around the task, but a well-made, portable tool
+that users can simply download and run.
 
 ## Contributing
 

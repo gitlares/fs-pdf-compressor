@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.6 — 2026-07-24
+
+- Added a Linux desktop edition using PySide6, with the same local compression
+  engine, quality profiles, batch results, and original-file safeguards as the
+  native macOS app.
+- Added a self-contained x86_64 AppImage that bundles Ghostscript, plus a
+  GitHub Actions build workflow for reproducible Linux artifacts.
+- Added AppImage update metadata (`zsync`) and a user-initiated **Application
+  → Check for Updates…** flow that verifies the downloaded SHA-256 file before
+  replacing and restarting the AppImage.
+- Moved shared PDF compression behavior into a platform-neutral module so the
+  macOS and Linux interfaces use the same processing rules.
+
 ## 1.0.5 — 2026-07-23
 
 - Expanded the public Apple Silicon distribution to **macOS 14 (Sonoma) and

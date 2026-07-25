@@ -58,6 +58,27 @@ APP_VERSION="1.0.4" \
 .build-venv/bin/python build_macos.py
 ```
 
+### Linux x86_64 AppImage releases
+
+Run **Build Linux AppImage** on GitHub Actions with the exact release version.
+The artifact contains the portable AppImage plus its `zsync` metadata and
+SHA-256 file. Test the AppImage on a supported Linux desktop before release.
+
+When attaching the Linux files to the matching GitHub Release, retain these
+exact names; the installed AppImage depends on them for **Application → Check
+for Updates…**:
+
+```text
+FS-PDF-Compressor-x86_64.AppImage
+FS-PDF-Compressor-x86_64.AppImage.zsync
+FS-PDF-Compressor-x86_64.AppImage.sha256
+```
+
+The update action downloads only from the public GitHub Release over HTTPS,
+checks the AppImage against the published SHA-256 asset, then replaces it only
+after the running copy exits. Never upload the AppImage without its matching
+checksum file.
+
 The build script signs bundled Mach-O files first, seals the application with
 hardened runtime and a secure timestamp, creates the DMG, and signs the DMG.
 It also writes a third-party license directory, a runtime dependency manifest,

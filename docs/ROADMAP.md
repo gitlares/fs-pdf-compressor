@@ -1,5 +1,12 @@
 # FS PDF Compressor roadmap
 
+## Completed in 1.0.6 — Linux AppImage edition
+
+- Added an x86_64 Linux AppImage with a native Qt interface and the same shared
+  compression engine as macOS.
+- Bundled Ghostscript, AppImage `zsync` metadata, checksum verification, and a
+  user-initiated in-app update path.
+
 ## Completed in 1.0.5 — Apple Silicon macOS 14+ compatibility
 
 - Built the unsigned base application on GitHub's `macos-14` Apple Silicon

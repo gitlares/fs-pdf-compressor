@@ -1,0 +1,62 @@
+# Linux
+
+The Linux edition is developed in the same repository as the macOS app. It
+shares the PDF-processing engine and quality profiles, while using a Qt desktop
+interface that deliberately mirrors the FS PDF Compressor layout.
+
+The first distribution target is an x86_64 AppImage. It includes Ghostscript,
+so users do not need Homebrew, a package manager, or a separate Ghostscript
+installation.
+
+## Run during development
+
+On an x86_64 Linux system with Python 3.12 or newer and Ghostscript:
+
+```sh
+sudo apt-get install ghostscript python3-venv
+python3 -m venv .linux-build-venv
+.linux-build-venv/bin/python -m pip install -r requirements-linux.txt
+.linux-build-venv/bin/python linux_app.py
+```
+
+## Build an AppImage
+
+The GitHub Actions workflow **Build Linux AppImage** is the preferred
+way to build it. It runs on Ubuntu 22.04 so the output has a conservative
+runtime baseline. Start it manually from the Actions tab, download its
+artifact, then on Linux run:
+
+```sh
+chmod +x FS-PDF-Compressor-x86_64.AppImage
+./FS-PDF-Compressor-x86_64.AppImage
+```
+
+For a local Linux build, install Ghostscript and provide a verified
+`appimagetool` executable:
+
+```sh
+APPIMAGETOOL=/absolute/path/to/appimagetool \
+  .linux-build-venv/bin/python build_linux.py
+```
+
+The release AppImage is tested with all three quality profiles. It is x86_64
+only; ARM Linux is not supported yet.
+
+## Updates
+
+Released AppImages include both the standard AppImage `zsync` update metadata
+and an **Application → Check for Updates…** action. The action downloads the
+latest AppImage from the public GitHub Release, checks it against the published
+SHA-256 file, then replaces and restarts the AppImage only after the running
+copy exits. It needs write permission to the folder containing the AppImage.
+
+Every Linux release must publish these two assets with these exact, stable
+names, so installed copies can discover the newest release:
+
+```text
+FS-PDF-Compressor-x86_64.AppImage
+FS-PDF-Compressor-x86_64.AppImage.sha256
+```
+
+`appimagetool` generates `FS-PDF-Compressor-x86_64.AppImage.zsync` during the
+build; publish that sidecar too for external AppImage update clients.

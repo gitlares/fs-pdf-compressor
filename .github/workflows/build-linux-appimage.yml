@@ -1,0 +1,45 @@
+name: Build Linux AppImage
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to assemble (for example, 1.0.6)
+        required: true
+        default: "1.0.6"
+
+permissions:
+  contents: read
+
+jobs:
+  assemble:
+    runs-on: ubuntu-22.04
+    env:
+      APP_VERSION: ${{ inputs.version }}
+      DIST_DIR: ci-linux-build
+      APPIMAGETOOL: ${{ github.workspace }}/.tools/appimagetool-x86_64.AppImage
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ghostscript libfuse2
+          python3 -m venv .linux-build-venv
+          .linux-build-venv/bin/python -m pip install --upgrade pip
+          .linux-build-venv/bin/python -m pip install -r requirements-linux.txt
+      - name: Download pinned AppImage packager
+        run: |
+          mkdir -p .tools
+          curl --fail --location --retry 3 \
+            --output "$APPIMAGETOOL" \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          echo "a6d71e2b6cd66f8e8d16c37ad164658985e0cf5fcaa950c90a482890cb9d13e0  $APPIMAGETOOL" | sha256sum --check --status
+          chmod +x "$APPIMAGETOOL"
+      - name: Assemble AppImage
+        run: .linux-build-venv/bin/python build_linux.py
+      - name: Upload Linux AppImage and zsync metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: fs-pdf-compressor-${{ inputs.version }}-linux-x86_64
+          path: ci-linux-build/FS-PDF-Compressor-x86_64.AppImage*
+          if-no-files-found: error

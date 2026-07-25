@@ -44,6 +44,14 @@ licensed under the MIT License. Its license text is included at
 
 Source and release information: https://github.com/sparkle-project/Sparkle
 
+## Linux desktop runtime
+
+The Linux AppImage packages PySide6 (Qt for Python), PyInstaller, the Python
+runtime and Ghostscript. PySide6 is distributed under the LGPL-3.0-or-later;
+PyInstaller is GPL-2.0-or-later with its bootloader exception. The exact
+runtime versions and their license texts are included in the release AppImage.
+The application and bundled Ghostscript remain available under AGPL-3.0-or-later.
+
 ## Homebrew libraries
 
 Ghostscript dynamically depends on additional open-source libraries distributed

@@ -21,3 +21,6 @@ assets/*.iconset/
 # Legacy local prototype; the public release is native_app.py
 compressor_app.py
 setup.py
+
+# Local release operations (contains account and Keychain metadata, never secrets)
+PRIVATE_RELEASE_NOTES.md

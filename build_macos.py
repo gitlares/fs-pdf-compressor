@@ -33,7 +33,7 @@ ROOT = Path(__file__).resolve().parent
 # Set DIST_DIR for a separate local build directory (for example, release-test).
 DIST = Path(os.environ.get("DIST_DIR", str(ROOT / "release")))
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.5")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.6")
 APP = DIST / f"{APP_NAME}.app"
 DMG_NAME = f"FS-PDF-Compressor-{APP_VERSION}-arm64.dmg"
 GHOSTSCRIPT_PREFIX = Path("/opt/homebrew/opt/ghostscript").resolve()
@@ -470,6 +470,11 @@ def sign_embedded_macho_components() -> None:
     )
     for candidate in candidates:
         if candidate.is_symlink():
+            continue
+        # Sparkle contains nested XPC bundles with their own entitlements.
+        # They must be sealed as bundles by sign_sparkle_framework(), not as
+        # individual Mach-O files in this generic pass.
+        if "Sparkle.framework" in candidate.parts:
             continue
         resolved = candidate.resolve()
         if resolved in seen:

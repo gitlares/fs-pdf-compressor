@@ -57,6 +57,8 @@ user-writable location so in-app updates can replace it safely.
 
 ## Build from source
 
+### macOS
+
 Requirements: Apple Silicon Mac, macOS 14+, Homebrew and Python 3.12.
 
 ```shell
@@ -100,7 +102,9 @@ The app remains free and open source for everyone.
 
 ## Privacy
 
-PDFs never leave your computer. See the short [privacy statement](PRIVACY.md).
+PDFs never leave your computer. Network access is limited to documented update
+delivery and links opened by the user; see the short
+[privacy statement](PRIVACY.md).
 
 ## License
 

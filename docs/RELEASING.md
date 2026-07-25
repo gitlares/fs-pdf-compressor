@@ -6,6 +6,8 @@ file.
 
 ## Prerequisites
 
+### macOS
+
 - An active Apple Developer Program membership
 - A valid `Developer ID Application` certificate and private key in Keychain
 - An Apple app-specific password saved as a `notarytool` Keychain profile
@@ -25,6 +27,12 @@ xcrun notarytool store-credentials "FS-PDF-Compressor" \
   --apple-id "APPLE_ID" \
   --team-id "TEAM_ID"
 ```
+
+### Linux
+
+- Access to the **Build Linux AppImage** GitHub Actions workflow
+- An x86_64 Linux desktop for launch and compression testing
+- The AppImage, `.zsync` metadata and SHA-256 file produced by the same workflow
 
 ## Build and sign
 

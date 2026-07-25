@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Expanded the privacy statement for macOS and Linux, including local
+  diagnostic-log locations and the exact network activity used for updates.
+- Updated build, contribution and release documentation for both supported
+  platforms.
+
 ## 1.0.6 — 2026-07-24
 
 - Added a Linux desktop edition using PySide6, with the same local compression

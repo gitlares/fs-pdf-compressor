@@ -10,8 +10,12 @@
 - Added AppImage update metadata (`zsync`) and a user-initiated **Application
   → Check for Updates…** flow that verifies the downloaded SHA-256 file before
   replacing and restarting the AppImage.
+- Added a no-`sudo` Linux installer that verifies the release checksum and
+  integrates the AppImage with the user's applications menu.
 - Moved shared PDF compression behavior into a platform-neutral module so the
   macOS and Linux interfaces use the same processing rules.
+- Refined the native macOS footer alignment and returned the three quality
+  profiles to a compact options menu.
 
 ## 1.0.5 — 2026-07-23
 

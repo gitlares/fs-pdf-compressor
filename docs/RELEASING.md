@@ -44,16 +44,22 @@ SOURCE_REF="v1.0.5" \
 APP_VERSION="1.0.5" \
 MACOS_MINIMUM_VERSION="14.0" \
 MACOS_SIGNING_IDENTITY="Developer ID Application: NAME (TEAM_ID)" \
+MACOS_SIGNING_KEYCHAIN="/absolute/path/to/signing.keychain-db" \
 .build-venv/bin/python build_macos.py
 ```
 
 Never send Developer ID certificates, notarization credentials, or Sparkle
 keys to GitHub Actions. The CI artifact is only an unsigned base app.
+Keep the login Keychain as the user's default Keychain. A dedicated release
+Keychain may be added to the search list, but must never become the default.
+Set `MACOS_SIGNING_KEYCHAIN` so `codesign` uses that Keychain explicitly and
+does not depend on search-list order or another certificate with the same name.
 
 ### Local builds
 
 ```sh
 MACOS_SIGNING_IDENTITY="Developer ID Application: NAME (TEAM_ID)" \
+MACOS_SIGNING_KEYCHAIN="/absolute/path/to/signing.keychain-db" \
 APP_VERSION="1.0.4" \
 .build-venv/bin/python build_macos.py
 ```
@@ -88,6 +94,7 @@ to the Git tag that will identify the exact matching source:
 ```sh
 SOURCE_REF="v1.0.4" \
 MACOS_SIGNING_IDENTITY="Developer ID Application: NAME (TEAM_ID)" \
+MACOS_SIGNING_KEYCHAIN="/absolute/path/to/signing.keychain-db" \
 APP_VERSION="1.0.4" \
 .build-venv/bin/python build_macos.py
 ```
@@ -137,6 +144,13 @@ scripts/generate_appcast.sh 1.0.4
 git add docs/appcast.xml
 git commit -m "Publish 1.0.4 update feed"
 git push
+```
+
+If the verified artifacts live in a compatibility-specific output directory,
+pass that directory explicitly instead of copying or replacing artifacts:
+
+```sh
+scripts/generate_appcast.sh 1.0.6 release-1.0.6-macos14
 ```
 
 The script uses the private update key directly from the macOS login Keychain

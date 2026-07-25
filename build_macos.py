@@ -6,6 +6,7 @@
 
 Run with the project's build virtual environment:
     MACOS_SIGNING_IDENTITY="Developer ID Application: ..." \
+        MACOS_SIGNING_KEYCHAIN="/absolute/path/to/signing.keychain-db" \
         .build-venv/bin/python build_macos.py
 
 Without ``MACOS_SIGNING_IDENTITY`` the build falls back to an ad-hoc signature
@@ -38,6 +39,7 @@ APP = DIST / f"{APP_NAME}.app"
 DMG_NAME = f"FS-PDF-Compressor-{APP_VERSION}-arm64.dmg"
 GHOSTSCRIPT_PREFIX = Path("/opt/homebrew/opt/ghostscript").resolve()
 SIGNING_IDENTITY = os.environ.get("MACOS_SIGNING_IDENTITY", "-")
+SIGNING_KEYCHAIN = os.environ.get("MACOS_SIGNING_KEYCHAIN")
 REPOSITORY_URL = "https://github.com/gitlares/fs-pdf-compressor"
 SPARKLE_VERSION = "2.9.4"
 SPARKLE_ARCHIVE_URL = (
@@ -61,6 +63,8 @@ def sign(
     path: Path, *, hardened: bool = True, preserve_entitlements: bool = False
 ) -> None:
     command = ["codesign", "--force", "--sign", SIGNING_IDENTITY]
+    if SIGNING_KEYCHAIN:
+        command.extend(("--keychain", str(Path(SIGNING_KEYCHAIN).expanduser())))
     if SIGNING_IDENTITY == "-":
         command.append("--timestamp=none")
     else:

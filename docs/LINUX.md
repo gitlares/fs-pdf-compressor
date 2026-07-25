@@ -8,6 +8,29 @@ The first distribution target is an x86_64 AppImage. It includes Ghostscript,
 so users do not need Homebrew, a package manager, or a separate Ghostscript
 installation.
 
+## Install the release
+
+Download and run the AppImage directly:
+
+```sh
+curl -fLO https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-x86_64.AppImage
+chmod +x FS-PDF-Compressor-x86_64.AppImage
+./FS-PDF-Compressor-x86_64.AppImage
+```
+
+For applications-menu integration and a `fs-pdf-compressor` command, use the
+per-user installer:
+
+```sh
+curl -fsSLO https://raw.githubusercontent.com/gitlares/fs-pdf-compressor/main/scripts/install_linux_appimage.sh
+sh install_linux_appimage.sh
+```
+
+The installer does not use `sudo`. It verifies the AppImage against the
+release's published SHA-256 file, installs it under
+`~/.local/opt/fs-pdf-compressor`, and creates the desktop entry and command
+inside `~/.local`.
+
 ## Run during development
 
 On an x86_64 Linux system with Python 3.12 or newer and Ghostscript:
@@ -50,13 +73,14 @@ latest AppImage from the public GitHub Release, checks it against the published
 SHA-256 file, then replaces and restarts the AppImage only after the running
 copy exits. It needs write permission to the folder containing the AppImage.
 
-Every Linux release must publish these two assets with these exact, stable
+Every Linux release must publish these three assets with these exact, stable
 names, so installed copies can discover the newest release:
 
 ```text
 FS-PDF-Compressor-x86_64.AppImage
 FS-PDF-Compressor-x86_64.AppImage.sha256
+FS-PDF-Compressor-x86_64.AppImage.zsync
 ```
 
-`appimagetool` generates `FS-PDF-Compressor-x86_64.AppImage.zsync` during the
-build; publish that sidecar too for external AppImage update clients.
+`appimagetool` generates the `zsync` sidecar during the build for external
+AppImage update clients.

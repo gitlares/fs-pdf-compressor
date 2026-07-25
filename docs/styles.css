@@ -111,6 +111,8 @@ h1 {
 .install-card .eyebrow { color: #c7c1ff; }
 .install-card h2 { margin: 0; font-size: clamp(34px, 5vw, 54px); letter-spacing: -0.05em; }
 .install-card p:not(.eyebrow) { max-width: 590px; margin: 20px 0 0; color: #c7c5d2; line-height: 1.65; }
+.platform-installs { display: grid; gap: 22px; }
+.platform-installs h3 { margin: 0 0 10px; color: #dedbe9; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
 .install-card ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 13px; }
 .install-card li { min-height: 52px; padding: 0 17px; display: flex; align-items: center; gap: 13px; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; background: rgba(255,255,255,.06); font-size: 14px; }
 .install-card li span { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; color: #242136; background: #bcb6ff; font-size: 11px; font-weight: 800; }

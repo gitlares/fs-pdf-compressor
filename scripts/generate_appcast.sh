@@ -2,16 +2,17 @@
 # Generate a signed Sparkle appcast after the matching GitHub Release is live.
 set -euo pipefail
 
-if [[ $# -ne 1 ]]; then
-  print -u2 "Usage: scripts/generate_appcast.sh VERSION"
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+  print -u2 "Usage: scripts/generate_appcast.sh VERSION [RELEASE_DIR]"
   exit 64
 fi
 
 VERSION="$1"
 ROOT="${0:A:h:h}"
+RELEASE_DIR="${2:-$ROOT/release-${VERSION}}"
 SPARKLE_VERSION="2.9.4"
 SPARKLE_TOOL="$HOME/Library/Caches/FS PDF Compressor/Sparkle-${SPARKLE_VERSION}/bin/generate_appcast"
-ARCHIVE="$ROOT/release-${VERSION}/FS-PDF-Compressor-${VERSION}-arm64.zip"
+ARCHIVE="$RELEASE_DIR/FS-PDF-Compressor-${VERSION}-arm64.zip"
 RELEASE_URL="https://github.com/gitlares/fs-pdf-compressor/releases/tag/v${VERSION}"
 DOWNLOAD_PREFIX="https://github.com/gitlares/fs-pdf-compressor/releases/download/v${VERSION}/"
 

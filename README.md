@@ -39,11 +39,21 @@ Ghostscript and keeps the technical choices out of the way.
 
 ## Download
 
-Download the latest release from [GitHub Releases](https://github.com/gitlares/fs-pdf-compressor/releases/latest).
+- **macOS 14+ on Apple Silicon:** [download the signed and notarized DMG](https://github.com/gitlares/fs-pdf-compressor/releases/latest).
+- **Linux x86_64:** [download the self-contained AppImage](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-x86_64.AppImage).
 
-The current binary supports Apple Silicon and requires macOS 14 or later. It is
-Developer ID signed and Apple-notarized, so it opens normally with Gatekeeper
-enabled.
+The macOS build is Developer ID signed and Apple-notarized, so it opens
+normally with Gatekeeper enabled. The Linux AppImage is portable and bundles
+Ghostscript; make it executable and run it, or use the per-user installer:
+
+```sh
+curl -fsSLO https://raw.githubusercontent.com/gitlares/fs-pdf-compressor/main/scripts/install_linux_appimage.sh
+sh install_linux_appimage.sh
+```
+
+The installer needs no `sudo`. It verifies the published SHA-256 checksum,
+adds FS PDF Compressor to the applications menu, and keeps the AppImage in a
+user-writable location so in-app updates can replace it safely.
 
 ## Build from source
 
@@ -90,7 +100,7 @@ The app remains free and open source for everyone.
 
 ## Privacy
 
-PDFs never leave your Mac. See the short [privacy statement](PRIVACY.md).
+PDFs never leave your computer. See the short [privacy statement](PRIVACY.md).
 
 ## License
 

@@ -11,7 +11,6 @@ import objc
 from PyObjCTools import AppHelper
 
 from fs_pdf_compressor.core import (
-    QUALITY_CONTROL_LABELS,
     QUALITY_PROFILES,
     bundle_contents_dir,
     compress_pdf,
@@ -292,7 +291,7 @@ class PDFCompressorController(FN.NSObject):
 
         self.add_button = AK.NSButton.alloc().initWithFrame_(AK.NSZeroRect)
         self.add_button.setBezelStyle_(AK.NSBezelStyleRounded)
-        self.add_button.setControlSize_(AK.NSControlSizeSmall)
+        self.add_button.setControlSize_(AK.NSControlSizeRegular)
         self.add_button.setImage_(
             AK.NSImage.imageWithSystemSymbolName_accessibilityDescription_("plus", "Add")
         )
@@ -328,7 +327,8 @@ class PDFCompressorController(FN.NSObject):
         self.again_button = AK.NSButton.alloc().initWithFrame_(AK.NSZeroRect)
         self.again_button.setTitle_("Again")
         self.again_button.setBezelStyle_(AK.NSBezelStyleRounded)
-        self.again_button.setControlSize_(AK.NSControlSizeSmall)
+        self.again_button.setControlSize_(AK.NSControlSizeRegular)
+        self.again_button.setFont_(AK.NSFont.systemFontOfSize_(12.0))
         self.again_button.setImage_(
             AK.NSImage.imageWithSystemSymbolName_accessibilityDescription_(
                 "arrow.clockwise", "Repeat"
@@ -340,14 +340,30 @@ class PDFCompressorController(FN.NSObject):
         self.again_button.setAction_("repeatLastBatch:")
         self.footer.addSubview_(self.again_button)
 
-        self.quality_selector = AK.NSPopUpButton.alloc().initWithFrame_pullsDown_(
-            AK.NSZeroRect, False
+        self.options_button = AK.NSButton.alloc().initWithFrame_(AK.NSZeroRect)
+        self.options_button.setBezelStyle_(AK.NSBezelStyleRounded)
+        self.options_button.setControlSize_(AK.NSControlSizeRegular)
+        self.options_button.setImage_(
+            AK.NSImage.imageWithSystemSymbolName_accessibilityDescription_(
+                "ellipsis", "Options"
+            )
         )
-        self.quality_selector.setControlSize_(AK.NSControlSizeSmall)
-        self.quality_selector.addItemsWithTitles_(list(QUALITY_CONTROL_LABELS))
-        self.quality_selector.setTarget_(self)
-        self.quality_selector.setAction_("selectQuality:")
-        self.footer.addSubview_(self.quality_selector)
+        self.options_button.setImagePosition_(AK.NSImageOnly)
+        self.options_button.setTarget_(self)
+        self.options_button.setAction_("showOptions:")
+        self.footer.addSubview_(self.options_button)
+
+        self.quality_menu = AK.NSMenu.alloc().initWithTitle_("Quality")
+        self.quality_items = []
+        for index, (label, _, description) in enumerate(QUALITY_PROFILES):
+            item = AK.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                label, "selectQuality:", ""
+            )
+            item.setTarget_(self)
+            item.setTag_(index)
+            item.setToolTip_(description)
+            self.quality_menu.addItem_(item)
+            self.quality_items.append(item)
         self._update_quality_menu()
         self.layout_controls()
 
@@ -372,21 +388,26 @@ class PDFCompressorController(FN.NSObject):
         self.add_button.setFrame_(AK.NSMakeRect(14, control_y, 34, 28))
 
         right = width - 14
-        self.quality_selector.setFrame_(AK.NSMakeRect(right - 106, control_y, 106, 28))
-        right -= 116
-        self.again_button.setFrame_(AK.NSMakeRect(right - 80, control_y, 80, 28))
-        right -= 90
+        self.options_button.setFrame_(AK.NSMakeRect(right - 34, control_y, 34, 28))
+        right -= 42
+        self.again_button.setFrame_(AK.NSMakeRect(right - 88, control_y, 88, 28))
+        right -= 98
         self.progress.setFrame_(
             AK.NSMakeRect(right - 132, (footer_height - 4) / 2, 132, 4)
         )
+        keep_width = 96
         self.keep_original.setFrame_(
-            AK.NSMakeRect(right - 132, (footer_height - 24) / 2, 132, 24)
+            AK.NSMakeRect(right - keep_width, (footer_height - 24) / 2, keep_width, 24)
         )
 
         label_x = 58
-        label_width = max(90, right - 142 - label_x)
+        label_width = max(90, right - keep_width - 10 - label_x)
+        # NSTextField's label baseline sits slightly higher than regular
+        # NSButton content. Lower the frame by two points so the visible text,
+        # checkbox label, and button titles share one optical baseline.
+        label_y = (footer_height - 20) / 2 - 2
         self.status_label.setFrame_(
-            AK.NSMakeRect(label_x, (footer_height - 20) / 2, label_width, 20)
+            AK.NSMakeRect(label_x, label_y, label_width, 20)
         )
         self.canvas.setNeedsDisplay_(True)
 
@@ -437,7 +458,7 @@ class PDFCompressorController(FN.NSObject):
         self.keep_original.setEnabled_(False)
         self.keep_original.setHidden_(True)
         self.again_button.setEnabled_(False)
-        self.quality_selector.setEnabled_(False)
+        self.options_button.setEnabled_(False)
         self.progress.setDoubleValue_(0)
         self.progress.setHidden_(False)
 
@@ -487,12 +508,17 @@ class PDFCompressorController(FN.NSObject):
         self.keep_original.setHidden_(False)
         self.progress.setHidden_(True)
         self.again_button.setEnabled_(bool(self.pdf_files))
-        self.quality_selector.setEnabled_(True)
+        self.options_button.setEnabled_(True)
 
     def _update_quality_menu(self):
+        for index, item in enumerate(self.quality_items):
+            item.setState_(
+                AK.NSControlStateValueOn
+                if index == self.quality_index
+                else AK.NSControlStateValueOff
+            )
         label, _, _ = QUALITY_PROFILES[self.quality_index]
-        self.quality_selector.selectItemAtIndex_(self.quality_index)
-        self.quality_selector.setToolTip_(f"Quality: {label}")
+        self.options_button.setToolTip_(f"Quality: {label}")
 
     def chooseFiles_(self, sender):
         panel = AK.NSOpenPanel.openPanel()
@@ -511,8 +537,14 @@ class PDFCompressorController(FN.NSObject):
             self.results_table.setNeedsDisplay_(True)
             self._start_compression()
 
+    def showOptions_(self, sender):
+        location = AK.NSMakePoint(0, sender.bounds().size.height + 3)
+        self.quality_menu.popUpMenuPositioningItem_atLocation_inView_(
+            None, location, sender
+        )
+
     def selectQuality_(self, sender):
-        self.quality_index = sender.indexOfSelectedItem()
+        self.quality_index = sender.tag()
         self._update_quality_menu()
 
 

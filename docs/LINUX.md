@@ -8,6 +8,19 @@ The first distribution target is an x86_64 AppImage. It includes Ghostscript,
 so users do not need Homebrew, a package manager, or a separate Ghostscript
 installation.
 
+## Drop Zone
+
+Drop Zone is an optional small target for compressing PDFs without reopening
+the main window. Enable it from **Application → Show Drop Zone** and disable it
+by unchecking the same menu item. You can move it, double-click it to reopen
+the main window, and the app remembers its enabled state and position.
+
+On X11, the window manager can keep Drop Zone at desktop level. On Wayland,
+applications cannot reliably choose their own desktop layer or absolute
+placement because those decisions belong to the compositor. Drop Zone may
+therefore appear as a normal floating utility instead. Better Wayland
+integration is being investigated.
+
 ## Install the release
 
 Download and run the AppImage directly:

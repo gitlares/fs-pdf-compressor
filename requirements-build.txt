@@ -1,2 +1,4 @@
 PyInstaller==6.21.0
 pyobjc-framework-Cocoa==12.2.1
+pyobjc-framework-Quartz==12.2.1
+pyobjc-framework-ServiceManagement==12.2.1

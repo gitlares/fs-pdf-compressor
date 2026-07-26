@@ -10,21 +10,29 @@ import Foundation as FN
 import objc
 from PyObjCTools import AppHelper
 
+from fs_pdf_compressor.batch import BatchSummary, completion_text
 from fs_pdf_compressor.core import (
     QUALITY_PROFILES,
     bundle_contents_dir,
     compress_pdf,
     compression_logger,
     expand_pdf_paths,
-    format_file_size,
 )
+from fs_pdf_compressor.macos_drop_zone import DropZonePanel
+from fs_pdf_compressor.macos_login_item import (
+    current_state as login_item_state,
+    open_login_items_settings,
+    set_enabled as set_login_item_enabled,
+)
+from fs_pdf_compressor.macos_views import DropCanvas, ResultsTableView
 
 
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.6")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.7")
 REPOSITORY_URL = "https://github.com/gitlares/fs-pdf-compressor"
 CONTRIBUTE_URL = f"{REPOSITORY_URL}/blob/main/CONTRIBUTING.md"
 DONATE_URL = "https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ"
+DROP_ZONE_DEFAULTS_KEY = "DropZoneEnabled"
 
 
 def load_sparkle_updater():
@@ -46,194 +54,7 @@ def load_sparkle_updater():
         return None
 
 
-class DropCanvas(AK.NSView):
-    def initWithFrame_controller_(self, frame, controller):
-        self = objc.super(DropCanvas, self).initWithFrame_(frame)
-        if self is None:
-            return None
-        self.controller = controller
-        self.drag_active = False
-        self.registerForDraggedTypes_([AK.NSPasteboardTypeFileURL])
-        return self
-
-    def drawRect_(self, dirty_rect):
-        bounds = self.bounds()
-        AK.NSColor.windowBackgroundColor().setFill()
-        AK.NSBezierPath.fillRect_(bounds)
-
-        if self.controller.showing_results:
-            return
-
-        footer_height = self.controller.FOOTER_HEIGHT
-        available_height = max(0.0, bounds.size.height - footer_height)
-        side = min(188.0, bounds.size.width * 0.34, available_height * 0.56)
-        target = AK.NSMakeRect(
-            (bounds.size.width - side) / 2,
-            footer_height + (available_height - side) / 2,
-            side,
-            side,
-        )
-
-        border_color = (
-            AK.NSColor.controlAccentColor().colorWithAlphaComponent_(0.55)
-            if self.drag_active
-            else AK.NSColor.quaternaryLabelColor()
-        )
-        border_color.setStroke()
-        border = AK.NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius_(target, 19, 19)
-        border.setLineWidth_(2.0)
-        border.setLineDash_count_phase_([7.0, 6.0], 2, 0.0)
-        border.stroke()
-
-        arrow_color = (
-            AK.NSColor.controlAccentColor().colorWithAlphaComponent_(0.72)
-            if self.drag_active
-            else AK.NSColor.tertiaryLabelColor()
-        )
-        arrow_color.setStroke()
-        center_x = AK.NSMidX(target)
-        center_y = AK.NSMidY(target)
-        arrow = AK.NSBezierPath.bezierPath()
-        arrow.setLineWidth_(3.0)
-        arrow.setLineCapStyle_(AK.NSLineCapStyleRound)
-        arrow.setLineJoinStyle_(AK.NSLineJoinStyleRound)
-        arrow.moveToPoint_(AK.NSMakePoint(center_x, center_y + 36))
-        arrow.lineToPoint_(AK.NSMakePoint(center_x, center_y - 23))
-        arrow.moveToPoint_(AK.NSMakePoint(center_x - 21, center_y - 3))
-        arrow.lineToPoint_(AK.NSMakePoint(center_x, center_y - 25))
-        arrow.lineToPoint_(AK.NSMakePoint(center_x + 21, center_y - 3))
-        arrow.stroke()
-
-    def draggingEntered_(self, sender):
-        self.drag_active = True
-        self.setNeedsDisplay_(True)
-        return AK.NSDragOperationCopy
-
-    def draggingExited_(self, sender):
-        self.drag_active = False
-        self.setNeedsDisplay_(True)
-
-    def prepareForDragOperation_(self, sender):
-        return True
-
-    def performDragOperation_(self, sender):
-        self.drag_active = False
-        self.setNeedsDisplay_(True)
-        pasteboard = sender.draggingPasteboard()
-        urls = pasteboard.readObjectsForClasses_options_(
-            [FN.NSURL], {AK.NSPasteboardURLReadingFileURLsOnlyKey: True}
-        )
-        self.controller.handle_drop_urls(urls or [])
-        return bool(urls)
-
-
-class ResultsTableView(AK.NSView):
-    """A small, purpose-built result table for completed PDF batches."""
-
-    ROW_HEIGHT = 40.0
-    HEADER_HEIGHT = 34.0
-    INSET = 12.0
-
-    def initWithController_(self, controller):
-        self = objc.super(ResultsTableView, self).initWithFrame_(AK.NSZeroRect)
-        if self is None:
-            return None
-        self.controller = controller
-        return self
-
-    def isFlipped(self):
-        return True
-
-    def requiredHeightForWidth_(self, width):
-        rows = max(1, len(self.controller.statuses))
-        return self.INSET * 2 + self.HEADER_HEIGHT + rows * self.ROW_HEIGHT
-
-    def _draw_text(self, value, rect, font, color, alignment=AK.NSTextAlignmentLeft):
-        style = AK.NSMutableParagraphStyle.alloc().init()
-        style.setAlignment_(alignment)
-        style.setLineBreakMode_(AK.NSLineBreakByTruncatingMiddle)
-        attributes = {
-            AK.NSFontAttributeName: font,
-            AK.NSForegroundColorAttributeName: color,
-            AK.NSParagraphStyleAttributeName: style,
-        }
-        FN.NSString.stringWithString_(value).drawInRect_withAttributes_(rect, attributes)
-
-    def drawRect_(self, dirty_rect):
-        bounds = self.bounds()
-        card = AK.NSMakeRect(
-            self.INSET,
-            self.INSET,
-            max(0, bounds.size.width - self.INSET * 2),
-            min(
-                max(0, bounds.size.height - self.INSET * 2),
-                self.HEADER_HEIGHT + max(1, len(self.controller.statuses)) * self.ROW_HEIGHT,
-            ),
-        )
-        AK.NSColor.controlBackgroundColor().setFill()
-        AK.NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius_(card, 12, 12).fill()
-
-        heading_font = AK.NSFont.systemFontOfSize_weight_(10.0, AK.NSFontWeightSemibold)
-        body_font = AK.NSFont.systemFontOfSize_(13.0)
-        value_font = AK.NSFont.monospacedDigitSystemFontOfSize_weight_(13.0, AK.NSFontWeightMedium)
-        muted = AK.NSColor.secondaryLabelColor()
-        ink = AK.NSColor.labelColor()
-        accent = AK.NSColor.systemGreenColor()
-        row_left = card.origin.x + 14
-        row_right = card.origin.x + card.size.width - 14
-        value_width = 104
-        header_y = card.origin.y + 8
-        self._draw_text("FILE", AK.NSMakeRect(row_left, header_y, 240, 14), heading_font, muted)
-        self._draw_text(
-            "REDUCTION",
-            AK.NSMakeRect(row_right - value_width, header_y, value_width, 14),
-            heading_font,
-            muted,
-            AK.NSTextAlignmentRight,
-        )
-
-        separator_y = card.origin.y + self.HEADER_HEIGHT
-        AK.NSColor.separatorColor().setStroke()
-        line = AK.NSBezierPath.bezierPath()
-        line.moveToPoint_(AK.NSMakePoint(row_left, separator_y))
-        line.lineToPoint_(AK.NSMakePoint(row_right, separator_y))
-        line.setLineWidth_(1)
-        line.stroke()
-
-        for index, status in enumerate(self.controller.statuses):
-            row_y = separator_y + index * self.ROW_HEIGHT
-            filename, marker, result = status.partition("   ↓ ")
-            if marker:
-                detail = f"↓ {result}"
-                detail_color = accent
-            else:
-                filename, separator, detail = status.partition(" — ")
-                detail = detail if separator else "Waiting"
-                detail_color = muted
-            self._draw_text(
-                filename,
-                AK.NSMakeRect(row_left, row_y + 11, max(60, card.size.width - value_width - 40), 18),
-                body_font,
-                ink,
-            )
-            self._draw_text(
-                detail,
-                AK.NSMakeRect(row_right - value_width, row_y + 11, value_width, 18),
-                value_font,
-                detail_color,
-                AK.NSTextAlignmentRight,
-            )
-            if index < len(self.controller.statuses) - 1:
-                AK.NSColor.separatorColor().setStroke()
-                row_line = AK.NSBezierPath.bezierPath()
-                row_line.moveToPoint_(AK.NSMakePoint(row_left, row_y + self.ROW_HEIGHT))
-                row_line.lineToPoint_(AK.NSMakePoint(row_right, row_y + self.ROW_HEIGHT))
-                row_line.setLineWidth_(1)
-                row_line.stroke()
-
-
 class PDFCompressorController(FN.NSObject):
-    # Mirror the quiet, compact control strip shown on the public site preview.
     FOOTER_HEIGHT = 52.0
 
     def init(self):
@@ -246,6 +67,8 @@ class PDFCompressorController(FN.NSObject):
         self.quality_index = 1
         self.showing_results = False
         self.processing = False
+        self._batch_from_drop_zone = False
+        self.drop_zone = None
         self._build_window()
         return self
 
@@ -261,6 +84,7 @@ class PDFCompressorController(FN.NSObject):
         )
         self.window.setTitle_(APP_NAME)
         self.window.setMinSize_(AK.NSMakeSize(620, 380))
+        self.window.setReleasedWhenClosed_(False)
         self.window.setDelegate_(self)
         self.window.center()
 
@@ -382,8 +206,7 @@ class PDFCompressorController(FN.NSObject):
         )
         self.results_table.setFrame_(AK.NSMakeRect(0, 0, width, results_height))
 
-        # Keep the 14 px outer inset, 28 px controls, and 8 px corners used by
-        # the website preview so the native footer reads as one calm toolbar.
+        # Match the footer metrics used by the website preview.
         control_y = (footer_height - 28) / 2
         self.add_button.setFrame_(AK.NSMakeRect(14, control_y, 34, 28))
 
@@ -414,9 +237,6 @@ class PDFCompressorController(FN.NSObject):
     def windowDidResize_(self, notification):
         self.layout_controls()
 
-    def windowWillClose_(self, notification):
-        AK.NSApp.terminate_(self)
-
     def handle_drop_urls(self, urls):
         paths = [str(url.path()) for url in urls if url.isFileURL()]
         self._start_paths(paths)
@@ -424,20 +244,29 @@ class PDFCompressorController(FN.NSObject):
     def _expand_pdf_paths(self, paths):
         return expand_pdf_paths(paths)
 
-    def _start_paths(self, paths):
+    def _start_paths(self, paths, from_drop_zone=False):
         if self.processing:
             self.status_label.setStringValue_("Wait for the current batch to finish")
-            return
+            return False
         pdfs = self._expand_pdf_paths(paths)
         if not pdfs:
             self.status_label.setStringValue_("Choose PDF files")
-            return
+            return False
 
+        self._batch_from_drop_zone = from_drop_zone
         self.pdf_files = pdfs
         self.statuses = [Path(path).name for path in pdfs]
         self.metrics = [None] * len(pdfs)
         self._show_results()
         self._start_compression()
+        return True
+
+    def start_drop_zone_paths(self, paths):
+        return self._start_paths(paths, from_drop_zone=True)
+
+    def show_main_window(self):
+        self.window.makeKeyAndOrderFront_(None)
+        AK.NSApp.activateIgnoringOtherApps_(True)
 
     def _show_results(self):
         self.showing_results = True
@@ -488,27 +317,22 @@ class PDFCompressorController(FN.NSObject):
         self.metrics[index] = metrics
         self.results_table.setNeedsDisplay_(True)
         self.progress.setDoubleValue_(progress)
+        if self._batch_from_drop_zone and self.drop_zone is not None:
+            self.drop_zone.batch_progress(index + 1, len(self.pdf_files))
 
     def _finish_compression(self):
         self.processing = False
-        completed = [metric for metric in self.metrics if metric]
-        if completed:
-            average = sum(
-                metric["saved_size"] / metric["original_size"] * 100
-                for metric in completed
-            ) / len(completed)
-            saved = sum(metric["saved_size"] for metric in completed)
-            self.status_label.setStringValue_(
-                f"Done — {average:.1f}% average · {format_file_size(saved)} saved"
-            )
-        else:
-            self.status_label.setStringValue_("Done — no files were reduced")
+        summary = BatchSummary.from_metrics(self.metrics)
+        self.status_label.setStringValue_(completion_text(self.metrics))
         self.add_button.setEnabled_(True)
         self.keep_original.setEnabled_(True)
         self.keep_original.setHidden_(False)
         self.progress.setHidden_(True)
         self.again_button.setEnabled_(bool(self.pdf_files))
         self.options_button.setEnabled_(True)
+        if self._batch_from_drop_zone and self.drop_zone is not None:
+            self.drop_zone.batch_finished(summary)
+        self._batch_from_drop_zone = False
 
     def _update_quality_menu(self):
         for index, item in enumerate(self.quality_items):
@@ -550,9 +374,14 @@ class PDFCompressorController(FN.NSObject):
 
 class AppDelegate(FN.NSObject):
     def applicationDidFinishLaunching_(self, notification):
+        self.drop_zone_panel = None
         self._build_main_menu()
         self.updater_controller = load_sparkle_updater()
         self.controller = PDFCompressorController.alloc().init()
+        if FN.NSUserDefaults.standardUserDefaults().boolForKey_(
+            DROP_ZONE_DEFAULTS_KEY
+        ):
+            self._set_drop_zone_enabled(True)
         self.controller.window.makeKeyAndOrderFront_(None)
         AK.NSApp.activateIgnoringOtherApps_(True)
 
@@ -586,6 +415,29 @@ class AppDelegate(FN.NSObject):
         )
         update_item.setTarget_(self)
         application_menu.addItem_(update_item)
+        application_menu.addItem_(AK.NSMenuItem.separatorItem())
+
+        self.drop_zone_item = AK.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+            "Show Drop Zone", "toggleDropZone:", ""
+        )
+        self.drop_zone_item.setTarget_(self)
+        self.drop_zone_item.setState_(
+            AK.NSControlStateValueOn
+            if FN.NSUserDefaults.standardUserDefaults().boolForKey_(
+                DROP_ZONE_DEFAULTS_KEY
+            )
+            else AK.NSControlStateValueOff
+        )
+        application_menu.addItem_(self.drop_zone_item)
+
+        self.launch_at_login_item = (
+            AK.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                "Launch at Login", "toggleLaunchAtLogin:", ""
+            )
+        )
+        self.launch_at_login_item.setTarget_(self)
+        self._refresh_launch_at_login_item()
+        application_menu.addItem_(self.launch_at_login_item)
         application_menu.addItem_(AK.NSMenuItem.separatorItem())
 
         hide_item = AK.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
@@ -676,8 +528,68 @@ class AppDelegate(FN.NSObject):
             return
         self.updater_controller.checkForUpdates_(sender)
 
+    def toggleDropZone_(self, sender):
+        enabled = sender.state() != AK.NSControlStateValueOn
+        self._set_drop_zone_enabled(enabled)
+        FN.NSUserDefaults.standardUserDefaults().setBool_forKey_(
+            enabled, DROP_ZONE_DEFAULTS_KEY
+        )
+
+    def toggleLaunchAtLogin_(self, sender):
+        enabled = not login_item_state().enabled
+        success, error = set_login_item_enabled(enabled)
+        self._refresh_launch_at_login_item()
+        if not success:
+            alert = AK.NSAlert.alloc().init()
+            alert.setMessageText_("Could not change Launch at Login")
+            alert.setInformativeText_(error or "macOS rejected the change.")
+            alert.runModal()
+            return
+        if login_item_state().requires_approval:
+            alert = AK.NSAlert.alloc().init()
+            alert.setMessageText_("Approve Launch at Login")
+            alert.setInformativeText_(
+                "macOS requires your approval in System Settings before "
+                "FS PDF Compressor can open automatically."
+            )
+            alert.addButtonWithTitle_("Open System Settings")
+            alert.addButtonWithTitle_("Later")
+            if alert.runModal() == AK.NSAlertFirstButtonReturn:
+                open_login_items_settings()
+
+    def _refresh_launch_at_login_item(self):
+        state = login_item_state()
+        self.launch_at_login_item.setState_(
+            AK.NSControlStateValueOn
+            if state.enabled
+            else AK.NSControlStateValueOff
+        )
+
+    def _set_drop_zone_enabled(self, enabled):
+        self.drop_zone_item.setState_(
+            AK.NSControlStateValueOn
+            if enabled
+            else AK.NSControlStateValueOff
+        )
+        if enabled:
+            if self.drop_zone_panel is None:
+                self.drop_zone_panel = DropZonePanel.alloc().initWithController_(
+                    self.controller
+                )
+            self.controller.drop_zone = self.drop_zone_panel
+            self.drop_zone_panel.show_panel()
+            return
+
+        self.controller.drop_zone = None
+        if self.drop_zone_panel is not None:
+            self.drop_zone_panel.orderOut_(None)
+        if not self.controller.window.isVisible():
+            self.controller.show_main_window()
+
     def applicationShouldTerminateAfterLastWindowClosed_(self, application):
-        return True
+        return not FN.NSUserDefaults.standardUserDefaults().boolForKey_(
+            DROP_ZONE_DEFAULTS_KEY
+        )
 
 
 def main():

@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parent
 DIST = ROOT / os.environ.get("DIST_DIR", "release-linux")
 BUILD = ROOT / ".linux-build"
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.6")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.7")
 ARCHITECTURE = "x86_64"
 APPDIR = BUILD / "AppDir"
 APPIMAGE_NAME = f"FS-PDF-Compressor-{ARCHITECTURE}.AppImage"
@@ -172,7 +172,20 @@ def main() -> None:
     shutil.rmtree(BUILD, ignore_errors=True)
     shutil.rmtree(DIST, ignore_errors=True)
     DIST.mkdir(parents=True)
-    run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onedir", "--windowed", "--name", APP_NAME, "linux_app.py")
+    run(
+        sys.executable,
+        "-m",
+        "PyInstaller",
+        "--noconfirm",
+        "--clean",
+        "--onedir",
+        "--windowed",
+        "--name",
+        APP_NAME,
+        "--add-data",
+        f"{ROOT / 'assets' / 'desktop-drop-hole.png'}:.",
+        "linux_app.py",
+    )
     pyinstaller_bundle = ROOT / "dist" / APP_NAME
     bundle_ghostscript(pyinstaller_bundle / "_internal")
     write_appdir(pyinstaller_bundle)

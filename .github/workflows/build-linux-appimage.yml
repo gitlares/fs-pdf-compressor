@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version to assemble (for example, 1.0.6)
+        description: Version to assemble (for example, 1.0.7)
         required: true
-        default: "1.0.6"
+        default: "1.0.7"
 
 permissions:
   contents: read

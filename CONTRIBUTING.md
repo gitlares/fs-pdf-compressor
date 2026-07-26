@@ -35,6 +35,7 @@ python3 -m venv .linux-build-venv
 Before submitting:
 
 ```shell
+.build-venv/bin/python -m unittest discover -s tests -v
 .build-venv/bin/python -m py_compile \
   native_app.py build_macos.py linux_app.py build_linux.py \
   fs_pdf_compressor/*.py

@@ -44,6 +44,10 @@ the main window. It gives FS PDF Compressor a little personality while keeping
 the workflow fast: leave the small target on the desktop and drop PDFs onto it
 whenever they need to be compressed. Double-click it to reopen the main window.
 
+<p align="center">
+  <img src="assets/fs-pdf-compressor-drop-zone.gif" width="800" alt="Dropping a PDF onto FS PDF Compressor Drop Zone on macOS">
+</p>
+
 - On **macOS**, choose **FS PDF Compressor → Show Drop Zone**. The Drop Zone is
   available in every Space (virtual desktop). Uncheck the same menu item to
   hide and disable it. **Launch at Login** in the same menu is optional.

@@ -34,7 +34,11 @@ ROOT = Path(__file__).resolve().parent
 # Set DIST_DIR for a separate local build directory (for example, release-test).
 DIST = Path(os.environ.get("DIST_DIR", str(ROOT / "release")))
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.6")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.7")
+APP_DISPLAY_NAME = os.environ.get("MACOS_DISPLAY_NAME", APP_NAME)
+APP_BUNDLE_IDENTIFIER = os.environ.get(
+    "MACOS_BUNDLE_IDENTIFIER", "com.daniellares.fspdfcompressor"
+)
 APP = DIST / f"{APP_NAME}.app"
 DMG_NAME = f"FS-PDF-Compressor-{APP_VERSION}-arm64.dmg"
 GHOSTSCRIPT_PREFIX = Path("/opt/homebrew/opt/ghostscript").resolve()
@@ -315,6 +319,10 @@ def bundle_python_runtime_licenses() -> dict[str, str]:
         "pyinstaller": package_version("PyInstaller"),
         "pyobjc_core": package_version("pyobjc-core"),
         "pyobjc_framework_cocoa": package_version("pyobjc-framework-Cocoa"),
+        "pyobjc_framework_quartz": package_version("pyobjc-framework-Quartz"),
+        "pyobjc_framework_service_management": package_version(
+            "pyobjc-framework-ServiceManagement"
+        ),
     }
 
 
@@ -378,8 +386,8 @@ def write_info_plist(update_public_key: str | None) -> None:
         info = plistlib.load(file)
     info.update(
         {
-            "CFBundleDisplayName": APP_NAME,
-            "CFBundleIdentifier": "com.daniellares.fspdfcompressor",
+            "CFBundleDisplayName": APP_DISPLAY_NAME,
+            "CFBundleIdentifier": APP_BUNDLE_IDENTIFIER,
             "CFBundleShortVersionString": APP_VERSION,
             "CFBundleVersion": APP_VERSION,
             "NSHumanReadableCopyright": "© 2026 Daniel Lares",
@@ -441,6 +449,10 @@ def build_base_application() -> None:
     pyinstaller.append("native_app.py")
     run(*pyinstaller)
     write_info_plist(None)
+    shutil.copy2(
+        ROOT / "assets" / "desktop-drop-hole.png",
+        APP / "Contents" / "Resources" / "desktop-drop-hole.png",
+    )
     bundle_ghostscript()
     bundle_homebrew_licenses()
     python_runtime = bundle_python_runtime_licenses()

@@ -37,6 +37,26 @@ Ghostscript and keeps the technical choices out of the way.
 - Processes everything locally: no uploads, accounts, analytics or telemetry.
 - Includes Ghostscript, so end users do not need Homebrew or a separate install.
 
+### Drop Zone
+
+**Drop Zone** is an optional shortcut for compressing PDFs without reopening
+the main window. It gives FS PDF Compressor a little personality while keeping
+the workflow fast: leave the small target on the desktop and drop PDFs onto it
+whenever they need to be compressed. Double-click it to reopen the main window.
+
+- On **macOS**, choose **FS PDF Compressor → Show Drop Zone**. The Drop Zone is
+  available in every Space (virtual desktop). Uncheck the same menu item to
+  hide and disable it. **Launch at Login** in the same menu is optional.
+- On **Linux**, choose **Application → Show Drop Zone** and uncheck it to hide
+  and disable it. X11 desktops can keep it at desktop level. Under Wayland, the
+  compositor controls window placement and stacking, so the app cannot
+  reliably pin it to the desktop layer; it may appear as a normal floating
+  utility. We are investigating better Wayland integration.
+
+The setting and position are remembered. Drop Zone stays idle without polling
+the filesystem and uses the same local compression engine and selected quality
+profile as the main window.
+
 ## Download
 
 - **macOS 14+ on Apple Silicon:** [download the signed and notarized DMG](https://github.com/gitlares/fs-pdf-compressor/releases/latest).
@@ -80,6 +100,19 @@ The Linux edition is developed in this same repository. It uses the same
 compression engine and profiles, with a Qt interface designed to match the
 macOS app. The x86_64 AppImage bundles Ghostscript and has an in-app update
 check; see [Linux instructions](docs/LINUX.md).
+
+## Code structure
+
+The application keeps compression behavior independent from its interfaces:
+
+- `fs_pdf_compressor/core.py` owns PDF discovery, Ghostscript execution and
+  output-file safety.
+- `fs_pdf_compressor/batch.py` owns platform-neutral batch summaries.
+- `native_app.py` and the `macos_*` modules provide the AppKit application.
+- `linux_app.py` and the `linux_*` modules provide the Qt application and
+  AppImage update flow.
+- `build_macos.py` and `build_linux.py` package the same source for their
+  respective platforms.
 
 ## Acknowledgements
 

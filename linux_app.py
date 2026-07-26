@@ -2,12 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Daniel Lares
 
-"""Linux desktop interface for FS PDF Compressor.
-
-The layout intentionally mirrors the macOS app: an uncluttered drop surface,
-compact results table, and a fixed footer. Qt supplies the platform window
-integration while the visual system remains owned by FS PDF Compressor.
-"""
+"""Linux desktop interface for FS PDF Compressor."""
 
 from __future__ import annotations
 
@@ -17,144 +12,21 @@ from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from fs_pdf_compressor.batch import BatchSummary, completion_text
 from fs_pdf_compressor.core import (
     APP_NAME,
     QUALITY_CONTROL_LABELS,
     QUALITY_PROFILES,
-    compress_pdf,
-    compression_logger,
     expand_pdf_paths,
-    format_file_size,
 )
-from fs_pdf_compressor.linux_update import (
-    available_release,
-    download_verified_appimage,
-    replace_after_exit,
-)
+from fs_pdf_compressor.linux_drop_zone import DropZoneWindow
+from fs_pdf_compressor.linux_update import replace_after_exit
+from fs_pdf_compressor.linux_views import DropSurface, ResultsTable
+from fs_pdf_compressor.linux_workers import CompressionWorker, UpdateWorker
 
 
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.6")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.7")
 FOOTER_HEIGHT = 52
-
-
-class DropSurface(QtWidgets.QWidget):
-    paths_dropped = QtCore.Signal(list)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setAcceptDrops(True)
-        self._drag_active = False
-
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            self._drag_active = True
-            self.update()
-            event.acceptProposedAction()
-
-    def dragLeaveEvent(self, event):
-        self._drag_active = False
-        self.update()
-        event.accept()
-
-    def dropEvent(self, event):
-        self._drag_active = False
-        self.update()
-        paths = [url.toLocalFile() for url in event.mimeData().urls() if url.isLocalFile()]
-        if paths:
-            self.paths_dropped.emit(paths)
-        event.acceptProposedAction()
-
-    def paintEvent(self, event):
-        painter = QtGui.QPainter(self)
-        painter.setRenderHint(QtGui.QPainter.Antialiasing)
-        painter.fillRect(self.rect(), QtGui.QColor("#fbfbfc"))
-        side = min(188, int(self.width() * 0.34), int(self.height() * 0.56))
-        target = QtCore.QRect((self.width() - side) // 2, (self.height() - side) // 2, side, side)
-        border = QtGui.QColor("#7aa7e8") if self._drag_active else QtGui.QColor("#d6d7dc")
-        pen = QtGui.QPen(border, 2)
-        pen.setDashPattern([7, 6])
-        painter.setPen(pen)
-        painter.setBrush(QtCore.Qt.NoBrush)
-        painter.drawRoundedRect(target, 19, 19)
-
-        arrow = QtGui.QColor("#4b8ff7") if self._drag_active else QtGui.QColor("#b7bac2")
-        painter.setPen(QtGui.QPen(arrow, 3, QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
-        center = target.center()
-        painter.drawLine(center.x(), center.y() - 30, center.x(), center.y() + 26)
-        painter.drawLine(center.x() - 21, center.y() + 4, center.x(), center.y() + 26)
-        painter.drawLine(center.x(), center.y() + 26, center.x() + 21, center.y() + 4)
-
-
-class ResultsTable(QtWidgets.QTableWidget):
-    """Keep accepting PDF drops after the first batch replaces the drop surface."""
-
-    paths_dropped = QtCore.Signal(list)
-
-    def __init__(self, parent=None):
-        super().__init__(0, 2, parent)
-        self.setAcceptDrops(True)
-
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.acceptProposedAction()
-
-    def dragMoveEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.acceptProposedAction()
-
-    def dropEvent(self, event):
-        paths = [url.toLocalFile() for url in event.mimeData().urls() if url.isLocalFile()]
-        if paths:
-            self.paths_dropped.emit(paths)
-        event.acceptProposedAction()
-
-
-class CompressionWorker(QtCore.QObject):
-    result = QtCore.Signal(int, str, object)
-    finished = QtCore.Signal()
-
-    def __init__(self, paths, setting, keep_original):
-        super().__init__()
-        self.paths = paths
-        self.setting = setting
-        self.keep_original = keep_original
-
-    @QtCore.Slot()
-    def run(self):
-        try:
-            for index, path in enumerate(self.paths):
-                status, metric = compress_pdf(path, self.setting, self.keep_original)
-                self.result.emit(index, status, metric)
-        except Exception:
-            compression_logger().exception("Unexpected Linux batch worker failure")
-        finally:
-            self.finished.emit()
-
-
-class UpdateWorker(QtCore.QObject):
-    checked = QtCore.Signal(object)
-    progress = QtCore.Signal(int, int)
-    failed = QtCore.Signal(str)
-    downloaded = QtCore.Signal(object)
-    finished = QtCore.Signal()
-
-    @QtCore.Slot()
-    def check(self):
-        try:
-            self.checked.emit(available_release(APP_VERSION))
-        except Exception as error:
-            self.failed.emit(str(error))
-        finally:
-            self.finished.emit()
-
-    @QtCore.Slot(object, object)
-    def download(self, release, destination):
-        try:
-            self.downloaded.emit(download_verified_appimage(release, Path(destination), self.progress.emit))
-        except Exception as error:
-            self.failed.emit(str(error))
-        finally:
-            self.finished.emit()
 
 
 class PDFCompressorWindow(QtWidgets.QMainWindow):
@@ -168,10 +40,13 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         self.thread = None
         self.update_thread = None
         self.pending_update = None
+        self._batch_from_drop_zone = False
+        self.settings = QtCore.QSettings("gitlares", APP_NAME)
         self.setWindowTitle(APP_NAME)
         self.setMinimumSize(620, 380)
         self.resize(680, 430)
         self._build_ui()
+        self._build_drop_zone()
 
     def _build_ui(self):
         root = QtWidgets.QWidget()
@@ -277,8 +152,39 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         update_action = application_menu.addAction("Check for Updates…")
         update_action.triggered.connect(self.check_for_updates)
         application_menu.addSeparator()
+        self.drop_zone_action = application_menu.addAction("Show Drop Zone")
+        self.drop_zone_action.setCheckable(True)
+        self.drop_zone_action.setChecked(
+            self.settings.value("dropZoneEnabled", False, type=bool)
+        )
+        self.drop_zone_action.toggled.connect(self.set_drop_zone_enabled)
+        application_menu.addSeparator()
         about_action = application_menu.addAction(f"About {APP_NAME}")
         about_action.triggered.connect(self.show_about)
+        application_menu.addSeparator()
+        quit_action = application_menu.addAction(f"Quit {APP_NAME}")
+        quit_action.triggered.connect(QtWidgets.QApplication.quit)
+
+    def _build_drop_zone(self):
+        self.drop_zone = DropZoneWindow()
+        self.drop_zone.paths_dropped.connect(self.start_drop_zone_paths)
+        self.drop_zone.open_requested.connect(self.show_main_window)
+        if self.drop_zone_action.isChecked():
+            self.drop_zone.show_panel()
+
+    def set_drop_zone_enabled(self, enabled):
+        self.settings.setValue("dropZoneEnabled", enabled)
+        if enabled:
+            self.drop_zone.show_panel()
+            return
+        self.drop_zone.hide()
+        if not self.isVisible():
+            self.show_main_window()
+
+    def show_main_window(self):
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
 
     def update_quality_tooltip(self):
         label, _, _ = QUALITY_PROFILES[self.quality_index]
@@ -295,19 +201,30 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         paths, _ = QtWidgets.QFileDialog.getOpenFileNames(self, "Choose PDF files", str(Path.home()), "PDF files (*.pdf)")
         self.start_paths(paths)
 
-    def start_paths(self, paths):
+    def start_paths(self, paths, from_drop_zone=False):
         if self.processing:
             self.status_label.setText("Wait for the current batch to finish")
-            return
+            return False
         pdfs = expand_pdf_paths(paths)
         if not pdfs:
             self.status_label.setText("Choose PDF files")
-            return
+            return False
+        self._batch_from_drop_zone = from_drop_zone
         self.pdf_files = pdfs
         self.statuses = [Path(path).name for path in pdfs]
         self.metrics = [None] * len(pdfs)
         self.show_results()
         self.start_compression()
+        return True
+
+    def start_drop_zone_paths(self, paths):
+        was_processing = self.processing
+        if self.start_paths(paths, from_drop_zone=True):
+            self.drop_zone.set_processing()
+        else:
+            self.drop_zone.set_result(
+                "Busy" if was_processing else "PDF only"
+            )
 
     def show_results(self):
         self.stack.setCurrentWidget(self.results)
@@ -354,22 +271,24 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         self.results.setItem(index, 0, file_item)
         self.results.setItem(index, 1, detail_item)
         self.progress.setValue(round((index + 1) / len(self.pdf_files) * 100))
+        if self._batch_from_drop_zone:
+            self.drop_zone.set_progress(index + 1, len(self.pdf_files))
 
     def finish_compression(self):
         self.processing = False
-        completed = [metric for metric in self.metrics if metric]
-        if completed:
-            average = sum(metric["saved_size"] / metric["original_size"] * 100 for metric in completed) / len(completed)
-            saved = sum(metric["saved_size"] for metric in completed)
-            self.status_label.setText(f"Done — {average:.1f}% average · {format_file_size(saved)} saved")
-        else:
-            self.status_label.setText("Done — no files were reduced")
+        summary = BatchSummary.from_metrics(self.metrics)
+        self.status_label.setText(completion_text(self.metrics))
         self.add_button.setEnabled(True)
         self.keep_original.setEnabled(True)
         self.keep_original.show()
         self.progress.hide()
         self.again_button.setEnabled(bool(self.pdf_files))
         self.quality_menu_button.setEnabled(True)
+        if self._batch_from_drop_zone:
+            self.drop_zone.set_result(
+                summary.compact_text if summary else "No change"
+            )
+        self._batch_from_drop_zone = False
 
     def repeat_last_batch(self):
         if self.processing or not self.pdf_files:
@@ -402,7 +321,7 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         if self.update_thread is not None:
             return
         self.update_thread = QtCore.QThread(self)
-        self.update_worker = UpdateWorker()
+        self.update_worker = UpdateWorker(APP_VERSION)
         self.update_worker.moveToThread(self.update_thread)
         if task == "check":
             self.update_thread.started.connect(self.update_worker.check)
@@ -464,11 +383,20 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         self.status_label.setText("Could not check for updates")
         QtWidgets.QMessageBox.warning(self, "Check for Updates", f"Could not complete the update.\n\n{detail}")
 
+    def closeEvent(self, event):
+        if self.drop_zone_action.isChecked():
+            self.hide()
+            event.ignore()
+            return
+        event.accept()
+        QtWidgets.QApplication.quit()
+
 
 def main():
     application = QtWidgets.QApplication(sys.argv)
     application.setApplicationName(APP_NAME)
     application.setApplicationVersion(APP_VERSION)
+    application.setQuitOnLastWindowClosed(False)
     window = PDFCompressorWindow()
     window.show()
     paths = [argument for argument in sys.argv[1:] if not argument.startswith("-")]

@@ -1,5 +1,19 @@
 # FS PDF Compressor roadmap
 
+## Completed in 1.0.7 — Drop Zone
+
+- Added an optional, movable Drop Zone on macOS and Linux.
+- Compressed dropped PDFs through the existing shared engine without opening a
+  second process or polling the filesystem.
+- Remembered whether Drop Zone is enabled and where the user placed it.
+- Made Drop Zone available in every macOS Space.
+- Kept the normal application window and all three quality profiles unchanged.
+- Treated Linux desktop placement as compositor-dependent: X11 desktops can
+  honor the bottom-window hint, while some Wayland compositors may present the
+  target as a normal floating utility.
+- Separated platform views and workers into focused modules and added tests for
+  the shared non-UI behavior.
+
 ## Completed in 1.0.6 — Linux AppImage edition
 
 - Added an x86_64 Linux AppImage with a native Qt interface and the same shared
@@ -18,8 +32,6 @@
 
 ## Later — maintainability and reliability
 
-- Split the application controller into focused modules for AppKit views, batch
-  state, and Ghostscript compression.
 - Add a timeout and clearer recovery path for a Ghostscript process that does
   not finish.
 - Move directory expansion off the main UI thread so large folders remain

@@ -1,7 +1,21 @@
 # Changelog
 
-## Unreleased
+## 1.0.7 — 2026-07-26
 
+- Added an optional **Drop Zone** for compressing PDFs without
+  keeping the main window open. It is movable, remembers its position and
+  remains idle without polling.
+- Added native Drop Zone surfaces for AppKit and Qt. On macOS it is available
+  in every Space. Linux uses the
+  compositor's bottom-window hint and falls back to a normal floating utility
+  when a Wayland compositor does not honor desktop-layer positioning.
+- Added a native **Launch at Login** option on macOS for users who want Drop
+  Zone ready after signing in.
+- Split platform views, background workers, Drop Zone surfaces and batch
+  summaries into focused modules without changing the shared Ghostscript
+  compression behavior.
+- Added initial unit tests for batch summaries, PDF path expansion and safe
+  compressed-copy naming.
 - Expanded the privacy statement for macOS and Linux, including local
   diagnostic-log locations and the exact network activity used for updates.
 - Updated build, contribution and release documentation for both supported

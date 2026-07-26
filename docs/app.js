@@ -11,6 +11,24 @@ function applyRelease(release) {
     document.getElementById(id).href = asset.browser_download_url;
   }
   document.getElementById("release-version").textContent = release.tag_name;
+
+  const structuredData = document.getElementById("software-application-data");
+  if (structuredData) {
+    try {
+      const graph = JSON.parse(structuredData.textContent);
+      const application = graph["@graph"]?.find(
+        (entity) => entity["@type"] === "SoftwareApplication",
+      );
+      if (application) {
+        application.softwareVersion = release.tag_name.replace(/^v/, "");
+        application.downloadUrl = release.html_url;
+        application.releaseNotes = release.html_url;
+        structuredData.textContent = JSON.stringify(graph);
+      }
+    } catch {
+      // The static structured data remains valid if release enrichment fails.
+    }
+  }
 }
 
 for (const id of ["download-button", "download-button-bottom"]) {

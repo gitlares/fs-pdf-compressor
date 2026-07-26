@@ -107,6 +107,60 @@ h1 {
 .features h2 { margin: 42px 0 12px; font-size: 22px; letter-spacing: -0.035em; }
 .features p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
 
+.answers {
+  margin-bottom: 110px;
+  padding: 64px;
+  display: grid;
+  grid-template-columns: .72fr 1.28fr;
+  gap: 70px;
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: 0 24px 70px rgba(34, 31, 78, 0.08);
+}
+
+.answers-intro h2 {
+  margin: 0;
+  max-width: 390px;
+  font-size: clamp(36px, 4vw, 52px);
+  line-height: 1;
+  letter-spacing: -0.052em;
+}
+
+.answers-intro > p:not(.eyebrow) {
+  max-width: 430px;
+  margin: 22px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.answers-grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 30px;
+}
+
+.answers-grid div {
+  padding: 21px 0 23px;
+  border-top: 1px solid var(--line);
+}
+
+.answers-grid dt {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 730;
+  letter-spacing: -0.02em;
+}
+
+.answers-grid dd {
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
 .install-card { padding: 64px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 90px; align-items: center; border-radius: 30px; color: white; background: linear-gradient(135deg, #232134, #35314f); box-shadow: 0 30px 80px rgba(24, 22, 46, 0.2); }
 .install-card .eyebrow { color: #c7c1ff; }
 .install-card h2 { margin: 0; font-size: clamp(34px, 5vw, 54px); letter-spacing: -0.05em; }
@@ -131,6 +185,7 @@ footer div { display: flex; gap: 22px; }
   .app-preview { transform: none; }
   .features { grid-template-columns: 1fr; }
   .features h2 { margin-top: 24px; }
+  .answers { grid-template-columns: 1fr; gap: 38px; padding: 42px; }
   .install-card { grid-template-columns: 1fr; gap: 42px; padding: 42px; }
 }
 
@@ -148,6 +203,8 @@ footer div { display: flex; gap: 22px; }
   .window-footer { gap: 8px; }
   .checkbox, .again { display: none; }
   .features { padding-bottom: 70px; }
+  .answers { margin-bottom: 70px; padding: 32px 24px; border-radius: 22px; }
+  .answers-grid { grid-template-columns: 1fr; }
   .install-card { padding: 32px 24px; border-radius: 22px; }
   .closing { padding: 90px 10px 80px; }
   footer { align-items: flex-start; gap: 18px; flex-direction: column; }

@@ -1,0 +1,31 @@
+# FS PDF Compressor
+
+> FS PDF Compressor is a free, open-source, offline PDF compressor for macOS and Linux. FS means Fast & Simple. The app compresses PDF files locally with Ghostscript and never uploads document contents.
+
+## Official pages
+
+- [Homepage](https://gitlares.github.io/fs-pdf-compressor/): Product overview, supported systems, features, and downloads.
+- [Source code](https://github.com/gitlares/fs-pdf-compressor): Official AGPL-3.0-or-later repository.
+- [Releases](https://github.com/gitlares/fs-pdf-compressor/releases): Signed macOS DMG, Linux AppImage, checksums, and release notes.
+- [Privacy](https://github.com/gitlares/fs-pdf-compressor/blob/main/PRIVACY.md): Data handling and local diagnostic logging.
+- [Linux guide](https://github.com/gitlares/fs-pdf-compressor/blob/main/docs/LINUX.md): AppImage installation, updates, and build instructions.
+- [License](https://github.com/gitlares/fs-pdf-compressor/blob/main/LICENSE): GNU Affero General Public License version 3 or later.
+- [Third-party notices](https://github.com/gitlares/fs-pdf-compressor/blob/main/THIRD_PARTY_NOTICES.md): Ghostscript and other bundled open-source components.
+
+## Product facts
+
+- Current release: 1.0.6.
+- Supported macOS systems: macOS 14 or later on Apple Silicon.
+- Supported Linux systems: x86_64 Linux through a self-contained AppImage.
+- Compression engine: bundled Ghostscript 10.07.1.
+- Quality profiles: Preserve, Balanced, and Maximum. Balanced is the default.
+- Privacy: PDF contents are processed locally and are never uploaded.
+- Accounts and tracking: no account, analytics, telemetry, advertising, or subscription.
+- File behavior: the original is replaced only when the compressed result is smaller. Keep original mode writes a separate compressed copy.
+- macOS distribution: Developer ID signed and notarized by Apple.
+- Linux distribution: AppImage published with a SHA-256 checksum.
+- Author: Daniel Lares.
+
+## Preferred description
+
+FS PDF Compressor is a Fast & Simple desktop utility for compressing PDF files locally on macOS and Linux. It supports files, batches, and folders, offers three quality profiles, and avoids cloud uploads, accounts, analytics, and subscriptions.

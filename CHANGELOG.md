@@ -20,6 +20,7 @@
   diagnostic-log locations and the exact network activity used for updates.
 - Updated build, contribution and release documentation for both supported
   platforms.
+- Improved AppImage portability by keeping the host system's glibc runtime.
 
 ## 1.0.6 — 2026-07-24
 

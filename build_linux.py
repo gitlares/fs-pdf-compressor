@@ -36,6 +36,15 @@ UPDATE_INFORMATION = (
     "zsync|https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/"
     f"{APPIMAGE_NAME}.zsync"
 )
+HOST_RUNTIME_LIBRARIES = {
+    "libc.so.6",
+    "libdl.so.2",
+    "libm.so.6",
+    "libpthread.so.0",
+    "libresolv.so.2",
+    "librt.so.1",
+    "libutil.so.1",
+}
 
 
 def run(*args: str) -> None:
@@ -70,14 +79,14 @@ def ghostscript_data_dir() -> Path:
 
 
 def copy_shared_libraries(binary: Path, destination: Path) -> None:
-    """Bundle Ghostscript's non-loader shared objects for portable execution."""
+    """Bundle Ghostscript dependencies without replacing the host glibc runtime."""
     destination.mkdir(parents=True, exist_ok=True)
     for line in command_output("ldd", str(binary)).splitlines():
         if " => " not in line:
             continue
         _, location = line.split(" => ", 1)
         library = Path(location.split(" ", 1)[0])
-        if library.is_file():
+        if library.is_file() and library.name not in HOST_RUNTIME_LIBRARIES:
             shutil.copy2(library, destination / library.name)
 
 

@@ -1,5 +1,24 @@
 # FS PDF Compressor roadmap
 
+## Planned for 1.0.8 — Memory efficiency
+
+- Profile cold launch, settled idle use, Drop Zone-only use, and repeated
+  compression batches on macOS.
+- Reduce the approximately 308 MB clean-launch physical footprint measured on
+  macOS 26 without regressing the already-low 31–34 MB settled resident memory.
+- Audit eager Python, PyObjC, AppKit, and updater initialization, then defer
+  components that are not needed during launch.
+- Review PyInstaller inputs so the application does not import or package
+  unnecessary runtime modules.
+- Confirm that completed workers, batch results, temporary objects, and
+  Ghostscript processes are released promptly.
+- Add repeatable before-and-after measurements and a long-running batch test
+  so footprint regressions are caught before release.
+
+This release is about efficiency rather than new features. The native
+interface, Drop Zone, local-only processing, quality profiles, signing, and
+automatic updates must remain unchanged.
+
 ## Completed in 1.0.7 — Drop Zone
 
 - Added an optional, movable Drop Zone on macOS and Linux.

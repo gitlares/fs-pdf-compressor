@@ -174,9 +174,9 @@ The project keeps the canonical Cask source at
 DMG already published in the matching GitHub Release; no second binary host or
 project repository is required.
 
-The initial Cask is submitted as a pull request to the official
-`Homebrew/homebrew-cask` repository. Once merged, users can install the app
-with:
+When the repository passes Homebrew's new-Cask notability audit, the Cask can
+be submitted as a pull request to the official `Homebrew/homebrew-cask`
+repository. Once merged, users can install the app with:
 
 ```sh
 brew install --cask fs-pdf-compressor
@@ -204,6 +204,13 @@ source of code, releases, and release automation.
 The Cask currently targets Apple Silicon and macOS 14 or later, matching the
 published macOS binary. Do not update it until the corresponding DMG has
 passed signing, notarization, stapling, and Gatekeeper verification.
+
+Homebrew's current audit requires a new GitHub-hosted Cask to meet a
+notability threshold (75 stars, 30 watchers, or 30 forks). The project is
+below that threshold at the 1.0.7 release, so the recipe remains prepared in
+this repository and should be submitted once the project is eligible. Opening
+an early PR would fail Homebrew's automated audit and create unnecessary
+maintenance noise.
 
 ## Release compliance
 

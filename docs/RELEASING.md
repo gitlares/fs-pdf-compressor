@@ -167,6 +167,44 @@ to let `generate_appcast` use the key; approve that access without revealing or
 exporting the key. Publish the appcast only after the ZIP release asset exists
 at its GitHub URL.
 
+## Homebrew Cask distribution
+
+The project keeps the canonical Cask source at
+`packaging/homebrew/fs-pdf-compressor.rb`. It points to the signed, notarized
+DMG already published in the matching GitHub Release; no second binary host or
+project repository is required.
+
+The initial Cask is submitted as a pull request to the official
+`Homebrew/homebrew-cask` repository. Once merged, users can install the app
+with:
+
+```sh
+brew install --cask fs-pdf-compressor
+```
+
+For each new macOS release, run the helper after the verified DMG and GitHub
+Release asset exist:
+
+```sh
+scripts/update_homebrew_cask.sh 1.0.8 \
+  release-1.0.8-final/FS-PDF-Compressor-1.0.8-arm64.dmg
+brew audit --cask --new fs-pdf-compressor
+```
+
+Run the audit command from a checkout of `Homebrew/homebrew-cask`, where the
+file is placed under `Casks/f/fs-pdf-compressor.rb`; Homebrew's audit command
+accepts the Cask token, not an arbitrary path in this project.
+
+The helper calculates the DMG SHA-256, checks that the public release asset is
+available, and updates only the version and checksum in the local Cask source.
+Submit that small file as the next Homebrew Cask pull request. Homebrew's
+catalogue remains the distribution index while this repository remains the
+source of code, releases, and release automation.
+
+The Cask currently targets Apple Silicon and macOS 14 or later, matching the
+published macOS binary. Do not update it until the corresponding DMG has
+passed signing, notarization, stapling, and Gatekeeper verification.
+
 ## Release compliance
 
 Before publishing, create and push the Git tag named by `SOURCE_REF`. Attach

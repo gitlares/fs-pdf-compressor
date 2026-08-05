@@ -23,7 +23,7 @@ jobs:
       - name: Install Linux build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes ghostscript libfuse2 libxkbcommon-x11-0 libxcb-cursor0
+          sudo apt-get install --yes ghostscript libfuse2 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0
           python3 -m venv .linux-build-venv
           .linux-build-venv/bin/python -m pip install --upgrade pip
           .linux-build-venv/bin/python -m pip install -r requirements-linux.txt
@@ -43,6 +43,9 @@ jobs:
           qt_lib=squashfs-root/usr/lib/fs-pdf-compressor/_internal/PySide6/Qt/lib
           test -f "$qt_lib/libxkbcommon-x11.so.0"
           test -f "$qt_lib/libxcb-cursor.so.0"
+          test -f "$qt_lib/libxcb-icccm.so.4"
+          test -f "$qt_lib/libxcb-keysyms.so.1"
+          test -f "$qt_lib/libxcb-shape.so.0"
       - name: Upload Linux AppImage and zsync metadata
         uses: actions/upload-artifact@v4
         with:

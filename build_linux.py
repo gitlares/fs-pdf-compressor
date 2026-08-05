@@ -78,16 +78,42 @@ def ghostscript_data_dir() -> Path:
     return candidates[-1].parent
 
 
-def copy_shared_libraries(binary: Path, destination: Path) -> None:
-    """Bundle Ghostscript dependencies without replacing the host glibc runtime."""
-    destination.mkdir(parents=True, exist_ok=True)
+def shared_library_locations(binary: Path) -> list[Path]:
+    """Return resolved non-glibc shared libraries reported by ``ldd``."""
+    locations: list[Path] = []
     for line in command_output("ldd", str(binary)).splitlines():
         if " => " not in line:
             continue
         _, location = line.split(" => ", 1)
         library = Path(location.split(" ", 1)[0])
         if library.is_file() and library.name not in HOST_RUNTIME_LIBRARIES:
-            shutil.copy2(library, destination / library.name)
+            locations.append(library)
+    return locations
+
+
+def copy_shared_libraries(binary: Path, destination: Path) -> None:
+    """Bundle the complete non-glibc dependency closure reported by ``ldd``.
+
+    Qt's XCB plugin loads ``libQt6XcbQpa`` first; several XCB libraries are
+    dependencies of that library rather than of the plugin itself.  Walking
+    the closure avoids producing an AppImage that relies on the host runtime.
+    """
+    destination.mkdir(parents=True, exist_ok=True)
+    pending = [binary]
+    inspected: set[Path] = set()
+    copied: set[Path] = set()
+    while pending:
+        current = pending.pop()
+        resolved_current = current.resolve()
+        if resolved_current in inspected:
+            continue
+        inspected.add(resolved_current)
+        for library in shared_library_locations(current):
+            resolved_library = library.resolve()
+            if resolved_library not in copied:
+                shutil.copy2(library, destination / library.name)
+                copied.add(resolved_library)
+            pending.append(library)
 
 
 def bundle_ghostscript(pyinstaller_resources: Path) -> None:

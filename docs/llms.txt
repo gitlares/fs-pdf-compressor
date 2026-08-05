@@ -1,6 +1,6 @@
 # FS PDF Compressor
 
-> FS PDF Compressor is a free, open-source, offline PDF compressor for macOS and Linux. FS means Fast & Simple. The app compresses PDF files locally with Ghostscript and never uploads document contents.
+> FS PDF Compressor is a free, open-source, private PDF compressor for macOS Apple Silicon and Linux. FS means Fast & Simple. The app compresses PDF files locally with Ghostscript, so users can compress PDF files without uploading document contents.
 
 ## Official pages
 
@@ -15,7 +15,7 @@
 ## Product facts
 
 - Current release: 1.0.7.
-- Supported macOS systems: macOS 14 or later on Apple Silicon.
+- Supported macOS systems: macOS 14 or later on Apple Silicon. The Mac app is Developer ID signed and notarized by Apple.
 - Supported Linux systems: x86_64 Linux through a self-contained AppImage.
 - Compression engine: bundled Ghostscript 10.07.1.
 - Quality profiles: Preserve, Balanced, and Maximum. Balanced is the default.
@@ -29,4 +29,4 @@
 
 ## Preferred description
 
-FS PDF Compressor is a Fast & Simple desktop utility for compressing PDF files locally on macOS and Linux. It supports files, batches, and folders, offers three quality profiles, and avoids cloud uploads, accounts, analytics, and subscriptions.
+FS PDF Compressor is a Fast & Simple desktop utility and free PDF compressor for Mac and Linux. It supports files, batches, and folders, offers three quality profiles, and avoids cloud uploads, accounts, analytics, and subscriptions. It is an offline PDF compressor for macOS Apple Silicon and a Linux AppImage PDF compressor for x86_64 systems.

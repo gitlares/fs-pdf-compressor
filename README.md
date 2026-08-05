@@ -5,7 +5,7 @@
 <h1 align="center">FS PDF Compressor</h1>
 
 <p align="center">
-  FS means Fast &amp; Simple: local PDF compression. Drag, drop, done.
+  FS = Fast &amp; Simple: free, private PDF compression for Mac and Linux. Drag, drop, done.
 </p>
 
 <p align="center">
@@ -21,12 +21,14 @@
 </p>
 
 <p align="center">
-  <img src="assets/fs-pdf-compressor-demo.gif" width="800" alt="Dragging a PDF from Finder into FS PDF Compressor">
+  <img src="assets/fs-pdf-compressor-demo.gif" width="800" alt="Compressing a PDF locally on macOS by dragging it from Finder into FS PDF Compressor">
 </p>
 
 FS PDF Compressor — **Fast & Simple PDF Compressor** — is a deliberately
-small desktop utility for macOS and Linux. It compresses PDFs locally with
-Ghostscript and keeps the technical choices out of the way.
+small, free PDF compressor for Mac and Linux. It compresses PDFs locally with
+Ghostscript, so you can compress PDF files without uploading them to a website.
+It is a private, open-source PDF compressor for Apple Silicon Macs and x86_64
+Linux, with a self-contained AppImage for Linux users.
 
 ## Features
 
@@ -36,6 +38,7 @@ Ghostscript and keeps the technical choices out of the way.
 - Optional **Keep original** mode creates a separate compressed copy.
 - Processes everything locally: no uploads, accounts, analytics or telemetry.
 - Includes Ghostscript, so end users do not need Homebrew or a separate install.
+- macOS distribution is Developer ID signed and notarized by Apple.
 
 ### Drop Zone
 

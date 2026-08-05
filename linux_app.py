@@ -149,8 +149,10 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
             """
         )
         application_menu = self.menuBar().addMenu("Application")
-        update_action = application_menu.addAction("Check for Updates…")
-        update_action.triggered.connect(self.check_for_updates)
+        if "FLATPAK_ID" not in os.environ:
+            update_action = application_menu.addAction("Check for Updates…")
+            update_action.triggered.connect(self.check_for_updates)
+        
         application_menu.addSeparator()
         self.drop_zone_action = application_menu.addAction("Show Drop Zone")
         self.drop_zone_action.setCheckable(True)

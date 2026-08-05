@@ -23,7 +23,7 @@ jobs:
       - name: Install Linux build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes ghostscript libfuse2
+          sudo apt-get install --yes ghostscript libfuse2 libxkbcommon-x11-0 libxcb-cursor0
           python3 -m venv .linux-build-venv
           .linux-build-venv/bin/python -m pip install --upgrade pip
           .linux-build-venv/bin/python -m pip install -r requirements-linux.txt
@@ -37,6 +37,12 @@ jobs:
           chmod +x "$APPIMAGETOOL"
       - name: Assemble AppImage
         run: .linux-build-venv/bin/python build_linux.py
+      - name: Verify bundled Qt X11 runtime
+        run: |
+          ci-linux-build/FS-PDF-Compressor-x86_64.AppImage --appimage-extract >/dev/null
+          qt_lib=squashfs-root/usr/lib/fs-pdf-compressor/_internal/PySide6/Qt/lib
+          test -f "$qt_lib/libxkbcommon-x11.so.0"
+          test -f "$qt_lib/libxcb-cursor.so.0"
       - name: Upload Linux AppImage and zsync metadata
         uses: actions/upload-artifact@v4
         with:

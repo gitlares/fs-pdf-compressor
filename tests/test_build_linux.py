@@ -28,6 +28,26 @@ class LinuxDependencyBundleTests(unittest.TestCase):
             self.assertFalse((destination / system_runtime.name).exists())
             self.assertTrue((destination / portable_dependency.name).exists())
 
+    def test_bundle_qt_platform_dependencies_uses_qt_library_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            resources = Path(directory)
+            plugin = resources / "PySide6" / "Qt" / "plugins" / "platforms" / "libqxcb.so"
+            plugin.parent.mkdir(parents=True)
+            plugin.touch()
+
+            with patch.object(build_linux, "copy_shared_libraries") as copy_libraries:
+                build_linux.bundle_qt_platform_dependencies(resources)
+
+            copy_libraries.assert_called_once_with(
+                plugin,
+                resources / "PySide6" / "Qt" / "lib",
+            )
+
+    def test_bundle_qt_platform_dependencies_requires_xcb_plugin(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(RuntimeError, "X11 platform plugin was not found"):
+                build_linux.bundle_qt_platform_dependencies(Path(directory))
+
 
 if __name__ == "__main__":
     unittest.main()

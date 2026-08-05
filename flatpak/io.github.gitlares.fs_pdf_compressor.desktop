@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=FS PDF Compressor
+GenericName=PDF Compressor
+Comment=Compress PDF files locally, no upload required
+Exec=fs-pdf-compressor %F
+Icon=io.github.gitlares.fs_pdf_compressor
+Terminal=false
+Categories=Utility;Office;
+MimeType=application/pdf;
+StartupNotify=true
+X-Flatpak=io.github.gitlares.fs_pdf_compressor

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.gitlares.fs_pdf_compressor</id>
+
+  <name>FS PDF Compressor</name>
+  <summary>Compress PDF files locally, without uploading them</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0-or-later</project_license>
+
+  <description>
+    <p>
+      FS PDF Compressor is a small desktop utility to reduce the file size
+      of PDF documents entirely on your own machine. No file is ever
+      uploaded to a server: compression runs locally using Ghostscript.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Drag and drop one or several PDF files to compress them</li>
+      <li>Optional Drop Zone shortcut on the desktop for quick access</li>
+      <li>Choose between different compression levels</li>
+      <li>Works fully offline</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">io.github.gitlares.fs_pdf_compressor.desktop</launchable>
+
+  <categories>
+    <category>Utility</category>
+    <category>Office</category>
+  </categories>
+
+  <url type="homepage">https://github.com/gitlares/fs-pdf-compressor</url>
+  <url type="bugtracker">https://github.com/gitlares/fs-pdf-compressor/issues</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main window with drag-and-drop compression</caption>
+      <!-- Reemplaza por URLs propias, alojadas por ti (no capturas de
+           terceros ni imágenes de stock). Flathub exige HTTPS y una
+           resolución mínima recomendada de 1240x700 o similar 16:9. -->
+      <image>https://raw.githubusercontent.com/gitlares/fs-pdf-compressor/v1.0.9/packaging/screenshots/main-window.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Drop Zone shortcut on the desktop</caption>
+      <image>https://raw.githubusercontent.com/gitlares/fs-pdf-compressor/v1.0.9/packaging/screenshots/drop-zone.png</image>
+    </screenshot>
+  </screenshots>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="1.0.9" date="2026-08-05"/>
+  </releases>
+
+  <developer id="io.github.gitlares">
+    <name>gitlares</name>
+  </developer>
+
+  <supports>
+    <control>pointer</control>
+    <control>keyboard</control>
+    <control>touch</control>
+  </supports>
+</component>

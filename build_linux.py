@@ -109,6 +109,15 @@ def bundle_ghostscript(pyinstaller_resources: Path) -> None:
     )
 
 
+def bundle_qt_platform_dependencies(pyinstaller_resources: Path) -> None:
+    """Bundle libraries needed by Qt's X11 platform plugin at launch time."""
+    qt_root = pyinstaller_resources / "PySide6" / "Qt"
+    xcb_plugin = qt_root / "plugins" / "platforms" / "libqxcb.so"
+    if not xcb_plugin.is_file():
+        raise RuntimeError(f"PySide6 X11 platform plugin was not found: {xcb_plugin}")
+    copy_shared_libraries(xcb_plugin, qt_root / "lib")
+
+
 def write_appdir(pyinstaller_bundle: Path) -> None:
     application_root = APPDIR / "usr" / "lib" / "fs-pdf-compressor"
     application_root.parent.mkdir(parents=True, exist_ok=True)
@@ -197,6 +206,7 @@ def main() -> None:
     )
     pyinstaller_bundle = ROOT / "dist" / APP_NAME
     bundle_ghostscript(pyinstaller_bundle / "_internal")
+    bundle_qt_platform_dependencies(pyinstaller_bundle / "_internal")
     write_appdir(pyinstaller_bundle)
     bundle_compliance_documents()
     output = DIST / APPIMAGE_NAME

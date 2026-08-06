@@ -107,6 +107,31 @@ def _bundled_linux_ghostscript() -> tuple[str | None, dict[str, str]]:
     return str(bundled_gs), environment
 
 
+def _snap_ghostscript() -> tuple[str | None, dict[str, str]]:
+    """Find Ghostscript and its resources inside a strictly confined Snap."""
+    snap_root = os.environ.get("SNAP")
+    if not snap_root:
+        return None, os.environ.copy()
+    root = Path(snap_root)
+    executable = root / "usr" / "bin" / "gs"
+    resources = sorted((root / "usr" / "share" / "ghostscript").glob("*/Resource"))
+    if not executable.is_file() or not resources:
+        return None, os.environ.copy()
+    resource_root = resources[-1]
+    environment = os.environ.copy()
+    environment["GS_LIB"] = os.pathsep.join(
+        str(path)
+        for path in (
+            resource_root / "Init",
+            resource_root,
+            resource_root.parent / "lib",
+            resource_root.parent / "fonts",
+        )
+        if path.exists()
+    )
+    return str(executable), environment
+
+
 def get_ghostscript_config() -> tuple[str | None, dict[str, str]]:
     """Locate bundled Ghostscript first, then a development installation."""
     contents_dir = bundle_contents_dir()
@@ -134,6 +159,10 @@ def get_ghostscript_config() -> tuple[str | None, dict[str, str]]:
     bundled_gs, bundled_environment = _bundled_linux_ghostscript()
     if bundled_gs:
         return bundled_gs, bundled_environment
+
+    snap_gs, snap_environment = _snap_ghostscript()
+    if snap_gs:
+        return snap_gs, snap_environment
 
     for candidate in (shutil.which("gs"), "/opt/homebrew/bin/gs", "/usr/local/bin/gs"):
         if candidate and os.path.exists(candidate):

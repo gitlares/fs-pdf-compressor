@@ -29,6 +29,17 @@ APP_VERSION = os.environ.get("APP_VERSION", "1.0.7")
 FOOTER_HEIGHT = 52
 
 
+def supports_self_updates(environment=None):
+    """Return whether the AppImage replacement updater can be offered.
+
+    Flatpak and Snap are updated by their respective stores.  Their installed
+    application files are not writable by the app, so offering the AppImage
+    updater there would be misleading.
+    """
+    environment = os.environ if environment is None else environment
+    return not (environment.get("FLATPAK_ID") or environment.get("SNAP"))
+
+
 class PDFCompressorWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
@@ -149,9 +160,10 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
             """
         )
         application_menu = self.menuBar().addMenu("Application")
-        update_action = application_menu.addAction("Check for Updates…")
-        update_action.triggered.connect(self.check_for_updates)
-        application_menu.addSeparator()
+        if supports_self_updates():
+            update_action = application_menu.addAction("Check for Updates…")
+            update_action.triggered.connect(self.check_for_updates)
+            application_menu.addSeparator()
         self.drop_zone_action = application_menu.addAction("Show Drop Zone")
         self.drop_zone_action.setCheckable(True)
         self.drop_zone_action.setChecked(

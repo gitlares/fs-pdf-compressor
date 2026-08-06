@@ -1,0 +1,87 @@
+name: fs-pdf-compressor
+title: FS PDF Compressor
+version: "1.0.9"
+summary: Fast and simple local PDF compression
+description: |
+  Compress PDF files locally with Ghostscript. Drag in one or more PDFs (or a
+  folder), choose a compression profile, and files are replaced only when the
+  result is smaller. No uploads, accounts, analytics, or telemetry.
+base: core24
+grade: stable
+confinement: strict
+license: AGPL-3.0-or-later
+contact:
+  - https://github.com/gitlares/fs-pdf-compressor
+issues:
+  - https://github.com/gitlares/fs-pdf-compressor/issues
+website: https://gitlares.github.io/fs-pdf-compressor/
+source-code: https://github.com/gitlares/fs-pdf-compressor
+icon: assets/PDFCompresor.png
+platforms:
+  amd64:
+
+apps:
+  fs-pdf-compressor:
+    command: bin/fs-pdf-compressor
+    desktop: usr/share/applications/fs-pdf-compressor.desktop
+    plugs:
+      - desktop
+      - desktop-legacy
+      - home
+      - opengl
+      - removable-media
+      - wayland
+      - x11
+
+parts:
+  fs-pdf-compressor:
+    plugin: nil
+    source: .
+    source-type: local
+    build-packages:
+      - ghostscript
+      - python3-pip
+    stage-packages:
+      - ghostscript
+      - libdbus-1-3
+      - libegl1
+      - libfontconfig1
+      - libfreetype6
+      - libgl1
+      - libglib2.0-0
+      - libice6
+      - libopengl0
+      - libsm6
+      - libx11-xcb1
+      - libxcb-cursor0
+      - libxcb-icccm4
+      - libxcb-image0
+      - libxcb-keysyms1
+      - libxcb-randr0
+      - libxcb-render-util0
+      - libxcb-shape0
+      - libxcb-xfixes0
+      - libxkbcommon0
+      - libxkbcommon-x11-0
+      - libxrender1
+      - python3-minimal
+      - python3.12-minimal
+    override-build: |
+      set -eu
+      app_root="$CRAFT_PART_INSTALL/opt/fs-pdf-compressor"
+      mkdir -p "$app_root/python" "$CRAFT_PART_INSTALL/bin"
+      python3 -m pip install --no-compile --target "$app_root/python" \
+        -r snap/requirements.txt
+      # This application uses Qt Widgets only. Removing unused QML modules
+      # avoids shipping their optional multimedia and compositor plugins.
+      rm -rf "$app_root/python/PySide6/Qt/qml"
+      cp linux_app.py "$app_root/"
+      cp -a fs_pdf_compressor assets "$app_root/"
+      install -Dm0644 LICENSE "$app_root/licenses/FS-PDF-Compressor-AGPL-3.0.txt"
+      install -Dm0644 THIRD_PARTY_NOTICES.md "$app_root/licenses/THIRD_PARTY_NOTICES.md"
+      install -Dm0644 /usr/share/doc/ghostscript/copyright \
+        "$app_root/licenses/Ghostscript-copyright"
+      printf '%s\n' "$CRAFT_PROJECT_VERSION" > "$app_root/VERSION"
+      install -Dm0755 snap/fs-pdf-compressor "$CRAFT_PART_INSTALL/bin/fs-pdf-compressor"
+      install -Dm0644 snap/gui/fs-pdf-compressor.desktop \
+        "$CRAFT_PART_INSTALL/usr/share/applications/fs-pdf-compressor.desktop"

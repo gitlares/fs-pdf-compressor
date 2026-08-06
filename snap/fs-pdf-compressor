@@ -1,0 +1,11 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+set -eu
+
+app_root="$SNAP/opt/fs-pdf-compressor"
+export APP_VERSION="$(cat "$app_root/VERSION")"
+export PATH="$SNAP/usr/bin:$PATH"
+export PYTHONPATH="$app_root/python${PYTHONPATH:+:$PYTHONPATH}"
+
+exec "$SNAP/usr/bin/python3" "$app_root/linux_app.py" "$@"

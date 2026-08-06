@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=FS PDF Compressor
+Comment=Fast and simple local PDF compression
+Exec=fs-pdf-compressor %U
+Icon=${SNAP}/meta/gui/fs-pdf-compressor.png
+Categories=Office;Utility;
+MimeType=application/pdf;
+Terminal=false

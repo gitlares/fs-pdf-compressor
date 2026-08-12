@@ -102,7 +102,7 @@ in `snapcraft.yaml`, and build on Ubuntu with Snapcraft:
 
 ```sh
 snapcraft pack
-sudo snap install --dangerous ./fs-pdf-compressor_1.0.10_amd64.snap
+sudo snap install --dangerous ./fs-pdf-compressor_1.0.11_amd64.snap
 ```
 
 Test file selection, drag and drop, all three compression profiles and the
@@ -111,7 +111,7 @@ that store revision on a separate Linux system, and then promote the verified
 revision to `stable`:
 
 ```sh
-snapcraft upload ./fs-pdf-compressor_1.0.10_amd64.snap --release candidate
+snapcraft upload ./fs-pdf-compressor_1.0.11_amd64.snap --release candidate
 snapcraft status fs-pdf-compressor
 snapcraft release fs-pdf-compressor REVISION stable
 ```

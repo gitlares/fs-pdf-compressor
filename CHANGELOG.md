@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.11 — 2026-08-12
+
+- Preserve masked artwork inside mixed RGB/CMYK transparency groups by keeping
+  the source color spaces when Ghostscript applies the Balanced or Maximum
+  compression profile.
+
 ## 1.0.10 — 2026-08-12
 
 - Preserve PDF optional content and marked content during compression so

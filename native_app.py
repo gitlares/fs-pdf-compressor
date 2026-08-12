@@ -28,7 +28,7 @@ from fs_pdf_compressor.macos_views import DropCanvas, ResultsTableView
 
 
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.10")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.11")
 REPOSITORY_URL = "https://github.com/gitlares/fs-pdf-compressor"
 CONTRIBUTE_URL = f"{REPOSITORY_URL}/blob/main/CONTRIBUTING.md"
 DONATE_URL = "https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ"

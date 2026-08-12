@@ -1,6 +1,6 @@
 name: fs-pdf-compressor
 title: FS PDF Compressor
-version: "1.0.10"
+version: "1.0.11"
 summary: Fast and simple local PDF compression
 description: |
   Compress PDF files locally with Ghostscript. Drag in one or more PDFs (or a

@@ -93,6 +93,32 @@ checks the AppImage against the published SHA-256 asset, then replaces it only
 after the running copy exits. Never upload the AppImage without its matching
 checksum file.
 
+### Linux Snap Store releases
+
+Snap packaging lives on the dedicated `snap-packaging` branch so its confined
+runtime adjustments do not change the AppImage build on `main`. Update that
+branch with the release's shared application changes, set the matching version
+in `snapcraft.yaml`, and build on Ubuntu with Snapcraft:
+
+```sh
+snapcraft pack
+sudo snap install --dangerous ./fs-pdf-compressor_1.0.10_amd64.snap
+```
+
+Test file selection, drag and drop, all three compression profiles and the
+keep-original option before uploading. Publish to `candidate` first, install
+that store revision on a separate Linux system, and then promote the verified
+revision to `stable`:
+
+```sh
+snapcraft upload ./fs-pdf-compressor_1.0.10_amd64.snap --release candidate
+snapcraft status fs-pdf-compressor
+snapcraft release fs-pdf-compressor REVISION stable
+```
+
+The Snap Store distributes the promoted revision and installed systems refresh
+automatically. Store credentials must remain outside the repository.
+
 The build script signs bundled Mach-O files first, seals the application with
 hardened runtime and a secure timestamp, creates the DMG, and signs the DMG.
 It also writes a third-party license directory, a runtime dependency manifest,

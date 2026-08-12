@@ -157,6 +157,29 @@ def expand_pdf_paths(paths: list[str]) -> list[str]:
     return list(dict.fromkeys(pdfs))
 
 
+def _ghostscript_command(
+    gs_path: str,
+    temp_path: str,
+    original_path: str,
+    pdf_settings: str,
+) -> list[str]:
+    """Build a pdfwrite command that preserves the document's visible content."""
+    return [
+        gs_path,
+        "-sDEVICE=pdfwrite",
+        "-dCompatibilityLevel=1.7",
+        "-dPrinted=false",
+        "-dWantsOptionalContent=true",
+        "-dPreserveMarkedContent=true",
+        f"-dPDFSETTINGS={pdf_settings}",
+        "-dNOPAUSE",
+        "-dQUIET",
+        "-dBATCH",
+        f"-sOutputFile={temp_path}",
+        original_path,
+    ]
+
+
 def compress_pdf(original_path: str, pdf_settings: str, keep_original: bool):
     """Compress one PDF, preserving the original if no smaller result exists."""
     filename = os.path.basename(original_path)
@@ -170,17 +193,12 @@ def compress_pdf(original_path: str, pdf_settings: str, keep_original: bool):
 
         original_size = os.path.getsize(original_path)
         result = subprocess.run(
-            [
+            _ghostscript_command(
                 gs_path,
-                "-sDEVICE=pdfwrite",
-                "-dCompatibilityLevel=1.4",
-                f"-dPDFSETTINGS={pdf_settings}",
-                "-dNOPAUSE",
-                "-dQUIET",
-                "-dBATCH",
-                f"-sOutputFile={temp_path}",
+                temp_path,
                 original_path,
-            ],
+                pdf_settings,
+            ),
             env=gs_environment,
             capture_output=True,
         )

@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.0.10 — 2026-08-12
+
+- Preserve PDF optional content and marked content during compression so
+  artwork intended for on-screen viewing is not dropped as print-only output.
+- Generate PDF 1.7 output and explicitly retain the document's screen
+  appearance while keeping all three Ghostscript compression profiles.
+- Add a regression test for PDFs whose visible artwork is hidden when printed.
+
+## 1.0.9 — 2026-08-05
+
+- Fixed AppImage startup on minimal X11 systems by bundling the complete Qt
+  XCB runtime dependency closure.
+- Rebuilt the matching macOS release with Developer ID signing, notarization
+  and stapling.
+
+## 1.0.8 — 2026-08-05
+
+- Bundled and verified the Qt X11 runtime libraries required by the Linux
+  AppImage.
+- Improved public search metadata and release documentation.
+
 ## 1.0.7 — 2026-07-26
 
 - Added an optional **Drop Zone** for compressing PDFs without

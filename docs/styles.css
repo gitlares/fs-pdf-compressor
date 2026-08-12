@@ -107,6 +107,26 @@ h1 {
 .features h2 { margin: 42px 0 12px; font-size: 22px; letter-spacing: -0.035em; }
 .features p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
 
+.release-card {
+  margin-bottom: 110px;
+  padding: 58px 64px;
+  display: grid;
+  grid-template-columns: .85fr 1.15fr;
+  gap: 72px;
+  border: 1px solid rgba(81, 72, 229, 0.16);
+  border-radius: 30px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(238, 236, 255, 0.82));
+  box-shadow: 0 24px 70px rgba(34, 31, 78, 0.08);
+}
+.release-card h2 { margin: 0; font-size: clamp(36px, 4vw, 52px); line-height: 1; letter-spacing: -0.052em; }
+.release-card-details > p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.72; }
+.release-card ul { margin: 26px 0 0; padding: 0; list-style: none; display: grid; gap: 13px; }
+.release-card li { position: relative; padding-left: 24px; color: var(--ink); font-size: 14px; line-height: 1.58; }
+.release-card li::before { content: "✓"; position: absolute; left: 0; color: var(--blue); font-weight: 800; }
+.release-links { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.release-links a { color: var(--blue-dark); font-size: 13px; font-weight: 750; }
+.release-links a:hover { text-decoration: underline; }
+
 .answers {
   margin-bottom: 110px;
   padding: 64px;
@@ -185,6 +205,7 @@ footer div { display: flex; gap: 22px; }
   .app-preview { transform: none; }
   .features { grid-template-columns: 1fr; }
   .features h2 { margin-top: 24px; }
+  .release-card { grid-template-columns: 1fr; gap: 38px; padding: 42px; }
   .answers { grid-template-columns: 1fr; gap: 38px; padding: 42px; }
   .install-card { grid-template-columns: 1fr; gap: 42px; padding: 42px; }
 }
@@ -203,6 +224,7 @@ footer div { display: flex; gap: 22px; }
   .window-footer { gap: 8px; }
   .checkbox, .again { display: none; }
   .features { padding-bottom: 70px; }
+  .release-card { margin-bottom: 70px; padding: 32px 24px; border-radius: 22px; }
   .answers { margin-bottom: 70px; padding: 32px 24px; border-radius: 22px; }
   .answers-grid { grid-template-columns: 1fr; }
   .install-card { padding: 32px 24px; border-radius: 22px; }

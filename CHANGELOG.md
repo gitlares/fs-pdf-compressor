@@ -7,6 +7,8 @@
 - Generate PDF 1.7 output and explicitly retain the document's screen
   appearance while keeping all three Ghostscript compression profiles.
 - Add a regression test for PDFs whose visible artwork is hidden when printed.
+- Publish matching macOS, AppImage and Snap Store builds, including a
+  Developer ID-signed and Apple-notarized DMG and the signed Sparkle update.
 
 ## 1.0.9 — 2026-08-05
 

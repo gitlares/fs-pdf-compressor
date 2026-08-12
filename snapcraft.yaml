@@ -1,6 +1,6 @@
 name: fs-pdf-compressor
 title: FS PDF Compressor
-version: "1.0.9"
+version: "1.0.10"
 summary: Fast and simple local PDF compression
 description: |
   Compress PDF files locally with Ghostscript. Drag in one or more PDFs (or a
@@ -15,7 +15,7 @@ contact:
 issues:
   - https://github.com/gitlares/fs-pdf-compressor/issues
 website: https://gitlares.github.io/fs-pdf-compressor/
-source-code: https://github.com/gitlares/fs-pdf-compressor
+source-code: https://github.com/gitlares/fs-pdf-compressor/tree/snap-packaging
 icon: assets/PDFCompresor.png
 platforms:
   amd64:

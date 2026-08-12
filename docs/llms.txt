@@ -15,6 +15,7 @@
 ## Product facts
 
 - Current release: 1.0.10.
+- Version 1.0.10 preserves optional PDF content, marked content and artwork intended for on-screen viewing across all three compression profiles.
 - Supported macOS systems: macOS 14 or later on Apple Silicon. The Mac app is Developer ID signed and notarized by Apple.
 - Supported Linux systems: x86_64 Linux through a self-contained AppImage.
 - Compression engine: bundled Ghostscript 10.07.1.

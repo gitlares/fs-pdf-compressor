@@ -25,7 +25,7 @@ from fs_pdf_compressor.linux_views import DropSurface, ResultsTable
 from fs_pdf_compressor.linux_workers import CompressionWorker, UpdateWorker
 
 
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.10")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.11")
 FOOTER_HEIGHT = 52
 
 

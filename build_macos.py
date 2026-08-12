@@ -34,7 +34,7 @@ ROOT = Path(__file__).resolve().parent
 # Set DIST_DIR for a separate local build directory (for example, release-test).
 DIST = Path(os.environ.get("DIST_DIR", str(ROOT / "release")))
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.10")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.11")
 APP_DISPLAY_NAME = os.environ.get("MACOS_DISPLAY_NAME", APP_NAME)
 APP_BUNDLE_IDENTIFIER = os.environ.get(
     "MACOS_BUNDLE_IDENTIFIER", "com.daniellares.fspdfcompressor"

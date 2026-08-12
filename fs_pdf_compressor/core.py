@@ -172,6 +172,10 @@ def _ghostscript_command(
         "-dWantsOptionalContent=true",
         "-dPreserveMarkedContent=true",
         f"-dPDFSETTINGS={pdf_settings}",
+        # /screen and /ebook otherwise force RGB conversion. Ghostscript can
+        # lose masked artwork when an RGB image is nested in a CMYK
+        # transparency group, so override the preset after it is applied.
+        "-sColorConversionStrategy=LeaveColorUnchanged",
         "-dNOPAUSE",
         "-dQUIET",
         "-dBATCH",

@@ -140,6 +140,10 @@ If FS PDF Compressor saves you time, you can support its continued development
 with an optional [PayPal donation](https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ).
 The app remains free and open source for everyone.
 
+## Other projects
+
+[FS User Stories](https://gitlares.github.io/fs-user-stories/) · [Source code](https://github.com/gitlares/fs-user-stories)
+
 ## Privacy
 
 PDFs never leave your computer. Network access is limited to documented update

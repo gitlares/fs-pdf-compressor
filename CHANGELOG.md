@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.12 — 2026-09-02
+
+- Accept one or multiple PDF paths from Linux file-manager actions.
+- Keep PDF files associated with FS PDF Compressor without making it the
+  default PDF viewer.
+
 ## 1.0.7 — 2026-07-26
 
 - Added an optional **Drop Zone** for compressing PDFs without

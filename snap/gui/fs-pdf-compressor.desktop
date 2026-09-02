@@ -2,7 +2,7 @@
 Type=Application
 Name=FS PDF Compressor
 Comment=Fast and simple local PDF compression
-Exec=fs-pdf-compressor %U
+Exec=fs-pdf-compressor %F
 Icon=${SNAP}/meta/gui/fs-pdf-compressor.png
 Categories=Office;Utility;
 MimeType=application/pdf;

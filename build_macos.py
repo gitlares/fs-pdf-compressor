@@ -34,12 +34,16 @@ ROOT = Path(__file__).resolve().parent
 # Set DIST_DIR for a separate local build directory (for example, release-test).
 DIST = Path(os.environ.get("DIST_DIR", str(ROOT / "release")))
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.11")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.12")
 APP_DISPLAY_NAME = os.environ.get("MACOS_DISPLAY_NAME", APP_NAME)
 APP_BUNDLE_IDENTIFIER = os.environ.get(
     "MACOS_BUNDLE_IDENTIFIER", "com.daniellares.fspdfcompressor"
 )
 APP = DIST / f"{APP_NAME}.app"
+QUICK_ACTION_NAME = "Compress with FS PDF Compressor"
+QUICK_ACTION = APP / "Contents" / "PlugIns" / f"{QUICK_ACTION_NAME}.appex"
+QUICK_ACTION_SOURCE = ROOT / "macos_quick_action" / "ActionRequestHandler.m"
+QUICK_ACTION_ENTITLEMENTS = ROOT / "macos_quick_action" / "QuickAction.entitlements"
 DMG_NAME = f"FS-PDF-Compressor-{APP_VERSION}-arm64.dmg"
 GHOSTSCRIPT_PREFIX = Path("/opt/homebrew/opt/ghostscript").resolve()
 SIGNING_IDENTITY = os.environ.get("MACOS_SIGNING_IDENTITY", "-")
@@ -64,7 +68,11 @@ def run(*args: str) -> None:
 
 
 def sign(
-    path: Path, *, hardened: bool = True, preserve_entitlements: bool = False
+    path: Path,
+    *,
+    hardened: bool = True,
+    preserve_entitlements: bool = False,
+    entitlements: Path | None = None,
 ) -> None:
     command = ["codesign", "--force", "--sign", SIGNING_IDENTITY]
     if SIGNING_KEYCHAIN:
@@ -77,6 +85,8 @@ def sign(
             command.extend(("--options", "runtime"))
     if preserve_entitlements:
         command.append("--preserve-metadata=entitlements")
+    if entitlements is not None:
+        command.extend(("--entitlements", str(entitlements)))
     command.append(str(path))
     run(*command)
 
@@ -393,6 +403,12 @@ def write_info_plist(update_public_key: str | None) -> None:
             "NSHumanReadableCopyright": "© 2026 Daniel Lares",
             "LSApplicationCategoryType": "public.app-category.utilities",
             "LSMinimumSystemVersion": MINIMUM_SYSTEM_VERSION,
+            "CFBundleURLTypes": [
+                {
+                    "CFBundleURLName": f"{APP_BUNDLE_IDENTIFIER}.quick-action",
+                    "CFBundleURLSchemes": ["fspdfcompressor"],
+                }
+            ],
         }
     )
     if update_public_key is None:
@@ -416,6 +432,72 @@ def write_info_plist(update_public_key: str | None) -> None:
         )
     with info_plist.open("wb") as file:
         plistlib.dump(info, file)
+
+
+def bundle_quick_action() -> None:
+    """Build and sign the Finder Action Extension embedded in the app."""
+    executable = QUICK_ACTION / "Contents" / "MacOS" / QUICK_ACTION_NAME
+    resources = QUICK_ACTION / "Contents" / "Resources"
+    executable.parent.mkdir(parents=True, exist_ok=True)
+    resources.mkdir(parents=True, exist_ok=True)
+
+    run(
+        "xcrun",
+        "--sdk",
+        "macosx",
+        "clang",
+        "-arch",
+        "arm64",
+        "-fobjc-arc",
+        "-fapplication-extension",
+        f"-mmacosx-version-min={MINIMUM_SYSTEM_VERSION}",
+        "-framework",
+        "AppKit",
+        "-framework",
+        "Foundation",
+        str(QUICK_ACTION_SOURCE),
+        "-o",
+        str(executable),
+    )
+
+    activation_rule = (
+        "extensionItems.@count > 0 AND "
+        "SUBQUERY(extensionItems, $item, "
+        "SUBQUERY($item.attachments, $attachment, "
+        'ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.adobe.pdf"'
+        ").@count == $item.attachments.@count"
+        ").@count == extensionItems.@count"
+    )
+    info = {
+        "CFBundleDevelopmentRegion": "en",
+        "CFBundleDisplayName": QUICK_ACTION_NAME,
+        "CFBundleExecutable": QUICK_ACTION_NAME,
+        "CFBundleIdentifier": f"{APP_BUNDLE_IDENTIFIER}.quick-action",
+        "CFBundleInfoDictionaryVersion": "6.0",
+        "CFBundleName": QUICK_ACTION_NAME,
+        "CFBundlePackageType": "XPC!",
+        "CFBundleShortVersionString": APP_VERSION,
+        "CFBundleSupportedPlatforms": ["MacOSX"],
+        "CFBundleVersion": APP_VERSION,
+        "LSMinimumSystemVersion": MINIMUM_SYSTEM_VERSION,
+        "NSExtension": {
+            "NSExtensionAttributes": {
+                "NSExtensionActivationRule": activation_rule,
+                "NSExtensionServiceAllowsFinderPreviewItem": True,
+                "NSExtensionServiceFinderPreviewLabel": QUICK_ACTION_NAME,
+                "NSExtensionServiceRoleType": "NSExtensionServiceRoleTypeEditor",
+            },
+            "NSExtensionPointIdentifier": "com.apple.ui-services",
+            "NSExtensionPrincipalClass": "ActionRequestHandler",
+        },
+    }
+    with (QUICK_ACTION / "Contents" / "Info.plist").open("wb") as file:
+        plistlib.dump(info, file)
+    shutil.copy2(
+        ROOT / "assets" / "PDFCompresor.icns",
+        resources / "PDFCompresor.icns",
+    )
+    sign(QUICK_ACTION, entitlements=QUICK_ACTION_ENTITLEMENTS)
 
 
 def prepare_output_directory() -> None:
@@ -464,6 +546,7 @@ def build_base_application() -> None:
     )
     shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", APP / "Contents" / "Resources")
     sign_ghostscript_components()
+    bundle_quick_action()
     sign(APP)
     run("codesign", "--verify", "--deep", "--strict", "--verbose=2", str(APP))
 
@@ -490,7 +573,7 @@ def sign_embedded_macho_components() -> None:
         # Sparkle contains nested XPC bundles with their own entitlements.
         # They must be sealed as bundles by sign_sparkle_framework(), not as
         # individual Mach-O files in this generic pass.
-        if "Sparkle.framework" in candidate.parts:
+        if "Sparkle.framework" in candidate.parts or QUICK_ACTION.name in candidate.parts:
             continue
         resolved = candidate.resolve()
         if resolved in seen:
@@ -513,6 +596,7 @@ def finalize_application() -> None:
     sparkle_framework = bundle_sparkle()
     sign_embedded_macho_components()
     sign_ghostscript_components()
+    sign(QUICK_ACTION, entitlements=QUICK_ACTION_ENTITLEMENTS)
     sign_sparkle_framework(sparkle_framework)
     sign(APP)
     run("codesign", "--verify", "--deep", "--strict", "--verbose=2", str(APP))

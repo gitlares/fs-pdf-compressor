@@ -42,7 +42,10 @@ sh install_linux_appimage.sh
 The installer does not use `sudo`. It verifies the AppImage against the
 release's published SHA-256 file, installs it under
 `~/.local/opt/fs-pdf-compressor`, and creates the desktop entry and command
-inside `~/.local`.
+inside `~/.local`. It also adds **Compress with FS PDF Compressor** to GNOME
+Files' **Scripts** submenu and KDE Dolphin's **Actions** submenu for PDF files.
+Both actions accept one or multiple selected PDFs. Other compatible file
+managers can send one or multiple PDFs through **Open With**.
 
 ## Run during development
 

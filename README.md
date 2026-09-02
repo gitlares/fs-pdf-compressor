@@ -33,6 +33,7 @@ Linux, with a self-contained AppImage for Linux users.
 ## Features
 
 - Drag and drop one PDF, several PDFs, or a folder.
+- Send selected PDFs from Finder on macOS, GNOME Files, or KDE Dolphin.
 - Balanced compression by default, with two optional quality profiles.
 - Replaces the original only when the result is smaller.
 - Optional **Keep original** mode creates a separate compressed copy.
@@ -63,6 +64,19 @@ whenever they need to be compressed. Double-click it to reopen the main window.
 The setting and position are remembered. Drop Zone stays idle without polling
 the filesystem and uses the same local compression engine and selected quality
 profile as the main window.
+
+### File-manager actions
+
+- On **macOS**, select one or more PDFs in Finder and choose **Quick Actions →
+  Compress with FS PDF Compressor**. If it is hidden after installation, open
+  **Quick Actions → Customize…** once and enable it under Finder extensions.
+- On **GNOME Files**, the per-user AppImage installer adds **Compress with FS
+  PDF Compressor** to the **Scripts** submenu.
+- On **KDE Dolphin**, the per-user AppImage installer adds **Compress with FS
+  PDF Compressor** to the **Actions** submenu for PDF files.
+
+All three actions pass the selected files to the same local compression flow;
+no document is uploaded.
 
 ## Download
 

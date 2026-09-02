@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.12 — 2026-09-02
+
+- Add **Compress with FS PDF Compressor** to Finder's **Quick Actions** menu
+  for one or multiple selected PDF files on macOS.
+- Pass multiple PDF paths from Linux desktop entries to the application.
+- Add per-user file-manager actions for GNOME Files (Nautilus) and KDE Dolphin
+  when installing the Linux AppImage.
+
 ## 1.0.11 — 2026-08-12
 
 - Preserve masked artwork inside mixed RGB/CMYK transparency groups by keeping

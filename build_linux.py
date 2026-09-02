@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parent
 DIST = ROOT / os.environ.get("DIST_DIR", "release-linux")
 BUILD = ROOT / ".linux-build"
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.11")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.12")
 ARCHITECTURE = "x86_64"
 APPDIR = BUILD / "AppDir"
 APPIMAGE_NAME = f"FS-PDF-Compressor-{ARCHITECTURE}.AppImage"
@@ -155,8 +155,9 @@ def write_appdir(pyinstaller_bundle: Path) -> None:
     shutil.copy2(icon, APPDIR / "usr" / "share" / "icons" / "hicolor" / "256x256" / "apps" / "fs-pdf-compressor.png")
     (APPDIR / "fs-pdf-compressor.desktop").write_text(
         "[Desktop Entry]\nType=Application\nName=FS PDF Compressor\n"
-        "Comment=Fast and Simple PDF compression\nExec=fs-pdf-compressor\n"
-        "Icon=fs-pdf-compressor\nCategories=Office;Utility;\nMimeType=application/pdf;\n",
+        "Comment=Fast and Simple PDF compression\nExec=fs-pdf-compressor %F\n"
+        "Icon=fs-pdf-compressor\nCategories=Office;Utility;\nMimeType=application/pdf;\n"
+        "Terminal=false\n",
         encoding="utf-8",
     )
     app_run = APPDIR / "AppRun"

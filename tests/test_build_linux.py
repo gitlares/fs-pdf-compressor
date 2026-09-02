@@ -9,6 +9,38 @@ import build_linux
 
 
 class LinuxDependencyBundleTests(unittest.TestCase):
+    def test_appimage_desktop_entry_accepts_multiple_pdf_paths(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            appdir = root / "AppDir"
+            bundle = root / "bundle"
+            bundle.mkdir()
+            icon = root / "icon.png"
+            icon.touch()
+
+            with (
+                patch.object(build_linux, "APPDIR", appdir),
+                patch.object(build_linux, "ROOT", root),
+            ):
+                (root / "assets").mkdir()
+                icon.rename(root / "assets" / "PDFCompresor.png")
+                build_linux.write_appdir(bundle)
+
+            desktop_entry = (appdir / "fs-pdf-compressor.desktop").read_text()
+            self.assertIn("Exec=fs-pdf-compressor %F", desktop_entry)
+            self.assertIn("MimeType=application/pdf;", desktop_entry)
+            self.assertIn("Terminal=false", desktop_entry)
+
+    def test_installer_adds_gnome_and_kde_file_manager_actions(self):
+        installer = (
+            Path(__file__).resolve().parents[1] / "scripts" / "install_linux_appimage.sh"
+        ).read_text()
+
+        self.assertIn(".local/share/nautilus/scripts", installer)
+        self.assertIn(".local/share/kio/servicemenus", installer)
+        self.assertIn(".local/share/kservices5/ServiceMenus", installer)
+        self.assertIn("Compress with FS PDF Compressor", installer)
+
     def test_copy_shared_libraries_keeps_host_glibc(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

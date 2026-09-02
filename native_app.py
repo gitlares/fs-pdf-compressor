@@ -28,7 +28,7 @@ from fs_pdf_compressor.macos_views import DropCanvas, ResultsTableView
 
 
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.11")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.12")
 REPOSITORY_URL = "https://github.com/gitlares/fs-pdf-compressor"
 CONTRIBUTE_URL = f"{REPOSITORY_URL}/blob/main/CONTRIBUTING.md"
 DONATE_URL = "https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ"
@@ -373,6 +373,14 @@ class PDFCompressorController(FN.NSObject):
 
 
 class AppDelegate(FN.NSObject):
+    def init(self):
+        self = objc.super(AppDelegate, self).init()
+        if self is None:
+            return None
+        self.controller = None
+        self._pending_quick_action_paths = []
+        return self
+
     def applicationDidFinishLaunching_(self, notification):
         self.drop_zone_panel = None
         self._build_main_menu()
@@ -384,6 +392,42 @@ class AppDelegate(FN.NSObject):
             self._set_drop_zone_enabled(True)
         self.controller.window.makeKeyAndOrderFront_(None)
         AK.NSApp.activateIgnoringOtherApps_(True)
+        if self._pending_quick_action_paths:
+            self.controller._start_paths(self._pending_quick_action_paths)
+            self._pending_quick_action_paths = []
+
+    def application_openURLs_(self, application, urls):
+        """Receive PDF selections sent by the bundled Finder Quick Action."""
+        paths = []
+        for url in urls:
+            if url.isFileURL():
+                paths.append(str(url.path()))
+                continue
+            if url.scheme() != "fspdfcompressor" or url.host() != "compress":
+                continue
+            components = FN.NSURLComponents.componentsWithURL_resolvingAgainstBaseURL_(
+                url, False
+            )
+            for item in components.queryItems() or []:
+                if item.name() != "bookmark" or not item.value():
+                    continue
+                bookmark = FN.NSData.alloc().initWithBase64EncodedString_options_(
+                    item.value(), 0
+                )
+                if bookmark is None:
+                    continue
+                resolved_url, _stale, error = (
+                    FN.NSURL.URLByResolvingBookmarkData_options_relativeToURL_bookmarkDataIsStale_error_(
+                        bookmark, 0, None, None, None
+                    )
+                )
+                if resolved_url is not None and error is None and resolved_url.isFileURL():
+                    paths.append(str(resolved_url.path()))
+        if self.controller is None:
+            self._pending_quick_action_paths.extend(paths)
+            return
+        self.controller.show_main_window()
+        self.controller._start_paths(paths)
 
     def _build_main_menu(self):
         main_menu = AK.NSMenu.alloc().init()

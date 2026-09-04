@@ -10,6 +10,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -144,17 +145,31 @@ def get_ghostscript_config() -> tuple[str | None, dict[str, str]]:
 def expand_pdf_paths(paths: list[str]) -> list[str]:
     """Expand files and folders into a stable, de-duplicated list of PDFs."""
     pdfs: list[str] = []
+    seen: set[str] = set()
     for raw_path in paths:
         path = Path(raw_path)
         if path.is_file() and path.suffix.lower() == ".pdf":
-            pdfs.append(str(path))
+            candidates = (str(path),)
         elif path.is_dir():
-            pdfs.extend(
+            candidates = (
                 str(candidate)
                 for candidate in path.rglob("*")
                 if candidate.is_file() and candidate.suffix.lower() == ".pdf"
             )
-    return list(dict.fromkeys(pdfs))
+        else:
+            continue
+        for candidate in candidates:
+            if candidate not in seen:
+                seen.add(candidate)
+                pdfs.append(candidate)
+    return pdfs
+
+
+def _error_output_tail(stream, limit: int = 8192) -> str:
+    """Return a bounded diagnostic tail from a process output stream."""
+    stream.seek(0, os.SEEK_END)
+    stream.seek(max(0, stream.tell() - limit))
+    return stream.read().decode("utf-8", errors="replace").strip()
 
 
 def _ghostscript_command(
@@ -196,22 +211,29 @@ def compress_pdf(original_path: str, pdf_settings: str, keep_original: bool):
             return f"{filename} — Ghostscript unavailable", None
 
         original_size = os.path.getsize(original_path)
-        result = subprocess.run(
-            _ghostscript_command(
-                gs_path,
-                temp_path,
-                original_path,
-                pdf_settings,
-            ),
-            env=gs_environment,
-            capture_output=True,
-        )
-        if result.returncode != 0 or not os.path.exists(temp_path):
-            if os.path.exists(temp_path):
-                os.unlink(temp_path)
-            detail = result.stderr.decode("utf-8", errors="replace").strip()
-            logger.error("Ghostscript failed for %s (exit %s): %s", filename, result.returncode, detail)
-            return f"{filename} — compression failed", None
+        with tempfile.SpooledTemporaryFile(max_size=64 * 1024, mode="w+b") as error_output:
+            result = subprocess.run(
+                _ghostscript_command(
+                    gs_path,
+                    temp_path,
+                    original_path,
+                    pdf_settings,
+                ),
+                env=gs_environment,
+                stdout=subprocess.DEVNULL,
+                stderr=error_output,
+            )
+            if result.returncode != 0 or not os.path.exists(temp_path):
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+                detail = _error_output_tail(error_output)
+                logger.error(
+                    "Ghostscript failed for %s (exit %s): %s",
+                    filename,
+                    result.returncode,
+                    detail,
+                )
+                return f"{filename} — compression failed", None
 
         new_size = os.path.getsize(temp_path)
         if new_size >= original_size:

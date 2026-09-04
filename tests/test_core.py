@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from fs_pdf_compressor.core import (
+    _error_output_tail,
     _ghostscript_command,
     compress_pdf,
     compressed_copy_path,
@@ -193,6 +194,42 @@ class PdfPathTests(unittest.TestCase):
             destination = compressed_copy_path(str(original))
 
             self.assertEqual(destination, str(root / "report compressed 2.pdf"))
+
+
+class ProcessOutputTests(unittest.TestCase):
+    def test_error_output_tail_is_bounded(self):
+        with tempfile.SpooledTemporaryFile(max_size=16, mode="w+b") as output:
+            output.write(b"x" * 64 + b"final diagnostic")
+
+            self.assertEqual(_error_output_tail(output, limit=16), "final diagnostic")
+
+    def test_compression_discards_stdout_and_spools_stderr(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / "original.pdf"
+            original.write_bytes(b"original payload")
+            received = {}
+
+            def fail_with_diagnostic(command, **kwargs):
+                received.update(kwargs)
+                kwargs["stderr"].write(b"bad input")
+                return subprocess.CompletedProcess(command, 1)
+
+            with (
+                mock.patch(
+                    "fs_pdf_compressor.core.get_ghostscript_config",
+                    return_value=("gs", {}),
+                ),
+                mock.patch(
+                    "fs_pdf_compressor.core.subprocess.run",
+                    side_effect=fail_with_diagnostic,
+                ),
+            ):
+                status, metrics = compress_pdf(str(original), "/ebook", keep_original=False)
+
+            self.assertEqual(status, "original.pdf — compression failed")
+            self.assertIsNone(metrics)
+            self.assertIs(received["stdout"], subprocess.DEVNULL)
+            self.assertNotIn("capture_output", received)
 
 
 class GhostscriptCommandTests(unittest.TestCase):

@@ -38,6 +38,7 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         self.quality_index = 1
         self.processing = False
         self.thread = None
+        self.worker = None
         self.update_thread = None
         self.pending_update = None
         self._batch_from_drop_zone = False
@@ -228,11 +229,17 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
 
     def show_results(self):
         self.stack.setCurrentWidget(self.results)
-        self.results.setRowCount(len(self.statuses))
-        for row, filename in enumerate(self.statuses):
-            self.results.setRowHeight(row, 40)
-            self.results.setItem(row, 0, QtWidgets.QTableWidgetItem(filename))
-            self.results.setItem(row, 1, QtWidgets.QTableWidgetItem("Waiting"))
+        self.results.setUpdatesEnabled(False)
+        try:
+            self.results.clearContents()
+            self.results.setRowCount(len(self.statuses))
+            for row, filename in enumerate(self.statuses):
+                self.results.setRowHeight(row, 40)
+                self.results.setItem(row, 0, QtWidgets.QTableWidgetItem(filename))
+                self.results.setItem(row, 1, QtWidgets.QTableWidgetItem("Waiting"))
+        finally:
+            self.results.setUpdatesEnabled(True)
+        self.results.viewport().update()
         target_height = min(460, max(190, 52 + 34 + len(self.statuses) * 40 + 24))
         self.resize(680, target_height)
 
@@ -256,7 +263,12 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
+        self.thread.finished.connect(self._compression_thread_finished)
         self.thread.start()
+
+    def _compression_thread_finished(self):
+        self.worker = None
+        self.thread = None
 
     def update_result(self, index, status, metric):
         self.statuses[index] = status

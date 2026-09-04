@@ -14,8 +14,8 @@
 
 ## Product facts
 
-- Current release: 1.0.12.
-- Version 1.0.12 adds a Finder Quick Action on macOS and file-manager actions for GNOME Files and KDE Dolphin on Linux, with support for one or multiple selected PDFs.
+- Current release: 1.0.13.
+- Version 1.0.13 is a small memory-footprint maintenance release: it keeps the macOS update system secure while deferring its full framework until needed, bounds temporary diagnostic memory, and releases completed Linux workers promptly.
 - Supported macOS systems: macOS 14 or later on Apple Silicon. The Mac app is Developer ID signed and notarized by Apple.
 - Supported Linux systems: x86_64 Linux through a self-contained AppImage.
 - Compression engine: bundled Ghostscript 10.07.1.

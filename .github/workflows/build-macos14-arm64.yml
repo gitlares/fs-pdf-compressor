@@ -25,12 +25,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Apple Silicon dependencies
         run: |
-          brew install ghostscript python@3.12
+          brew install python@3.12
           python3.12 -m venv .build-venv
           .build-venv/bin/python -m pip install --upgrade pip
           .build-venv/bin/python -m pip install -r requirements-build.txt
       - name: Assemble unsigned candidate
-        run: .build-venv/bin/python build_macos.py
+        run: |
+          runtime_dmg="$RUNNER_TEMP/FS-PDF-Compressor-1.0.12-arm64.dmg"
+          runtime_mount="$RUNNER_TEMP/fs-pdf-compressor-1.0.12-runtime"
+          curl --fail --location --retry 3 --output "$runtime_dmg" \
+            https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.12/FS-PDF-Compressor-1.0.12-arm64.dmg
+          echo "6f37e7657af03005e0853f38b676db265826a35572a685d043d5e459de0bc43a  $runtime_dmg" | shasum --algorithm 256 --check --status
+          mkdir "$runtime_mount"
+          hdiutil attach "$runtime_dmg" -nobrowse -readonly -mountpoint "$runtime_mount"
+          trap 'hdiutil detach "$runtime_mount"' EXIT
+          MACOS_GHOSTSCRIPT_SOURCE_APP="$runtime_mount/FS PDF Compressor.app" \
+            .build-venv/bin/python build_macos.py
       - name: Audit every bundled Mach-O target
         run: scripts/audit_macos_target.py --maximum 14.0 "ci-build/FS PDF Compressor.app"
       - name: Archive candidate without changing macOS links

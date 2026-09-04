@@ -46,6 +46,7 @@ QUICK_ACTION_SOURCE = ROOT / "macos_quick_action" / "ActionRequestHandler.m"
 QUICK_ACTION_ENTITLEMENTS = ROOT / "macos_quick_action" / "QuickAction.entitlements"
 DMG_NAME = f"FS-PDF-Compressor-{APP_VERSION}-arm64.dmg"
 GHOSTSCRIPT_PREFIX = Path("/opt/homebrew/opt/ghostscript").resolve()
+COMPATIBILITY_GHOSTSCRIPT_APP = os.environ.get("MACOS_GHOSTSCRIPT_SOURCE_APP")
 SIGNING_IDENTITY = os.environ.get("MACOS_SIGNING_IDENTITY", "-")
 SIGNING_KEYCHAIN = os.environ.get("MACOS_SIGNING_KEYCHAIN")
 REPOSITORY_URL = "https://github.com/gitlares/fs-pdf-compressor"
@@ -194,6 +195,35 @@ def dependencies(path: Path) -> list[tuple[str, Path]]:
 
 
 def bundle_ghostscript() -> None:
+    if COMPATIBILITY_GHOSTSCRIPT_APP:
+        source_app = Path(COMPATIBILITY_GHOSTSCRIPT_APP).resolve()
+        source_resources = source_app / "Contents" / "Resources" / "ghostscript"
+        source_frameworks = source_app / "Contents" / "Frameworks" / "Ghostscript"
+        source_licenses = source_app / "Contents" / "Resources" / "third-party-licenses"
+        if not (source_resources / "bin" / "gs").is_file() or not source_frameworks.is_dir():
+            raise RuntimeError(
+                "MACOS_GHOSTSCRIPT_SOURCE_APP must contain a bundled Ghostscript runtime"
+            )
+        shutil.copytree(
+            source_resources,
+            APP / "Contents" / "Resources" / "ghostscript",
+            symlinks=True,
+            dirs_exist_ok=True,
+        )
+        shutil.copytree(
+            source_frameworks,
+            APP / "Contents" / "Frameworks" / "Ghostscript",
+            symlinks=True,
+            dirs_exist_ok=True,
+        )
+        if source_licenses.is_dir():
+            shutil.copytree(
+                source_licenses,
+                APP / "Contents" / "Resources" / "third-party-licenses",
+                dirs_exist_ok=True,
+            )
+        return
+
     source_gs = GHOSTSCRIPT_PREFIX / "bin" / "gs"
     if not source_gs.is_file():
         raise RuntimeError(
@@ -248,6 +278,8 @@ def bundle_ghostscript() -> None:
 
 def bundle_homebrew_licenses() -> None:
     """Bundle license files for Ghostscript and its installed dependencies."""
+    if COMPATIBILITY_GHOSTSCRIPT_APP:
+        return
     result = subprocess.run(
         ["brew", "deps", "--installed", "--formula", "ghostscript"],
         check=True,
@@ -338,32 +370,45 @@ def bundle_python_runtime_licenses() -> dict[str, str]:
 
 def write_compliance_manifest(python_runtime: dict[str, str]) -> None:
     """Record versions, licenses, and source locations for the exact bundle."""
-    formulae = ["ghostscript"]
-    result = subprocess.run(
-        ["brew", "deps", "--installed", "--formula", "ghostscript"],
-        check=True,
-        text=True,
-        capture_output=True,
-    )
-    formulae.extend(result.stdout.splitlines())
-    formula_info = subprocess.run(
-        ["brew", "info", "--json=v2", *formulae],
-        check=True,
-        text=True,
-        capture_output=True,
-    )
-    manifest = json.loads(formula_info.stdout)
-    homebrew = []
-    for formula in manifest["formulae"]:
-        stable = formula.get("urls", {}).get("stable", {})
-        homebrew.append(
-            {
-                "name": formula["name"],
-                "version": formula.get("versions", {}).get("stable"),
-                "license": formula.get("license"),
-                "source_url": stable.get("url"),
-            }
+    if COMPATIBILITY_GHOSTSCRIPT_APP:
+        source_manifest = (
+            Path(COMPATIBILITY_GHOSTSCRIPT_APP).resolve()
+            / "Contents"
+            / "Resources"
+            / "THIRD_PARTY_MANIFEST.json"
         )
+        if not source_manifest.is_file():
+            raise RuntimeError(
+                "MACOS_GHOSTSCRIPT_SOURCE_APP is missing THIRD_PARTY_MANIFEST.json"
+            )
+        homebrew = json.loads(source_manifest.read_text())["homebrew_dependencies"]
+    else:
+        formulae = ["ghostscript"]
+        result = subprocess.run(
+            ["brew", "deps", "--installed", "--formula", "ghostscript"],
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+        formulae.extend(result.stdout.splitlines())
+        formula_info = subprocess.run(
+            ["brew", "info", "--json=v2", *formulae],
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+        manifest = json.loads(formula_info.stdout)
+        homebrew = []
+        for formula in manifest["formulae"]:
+            stable = formula.get("urls", {}).get("stable", {})
+            homebrew.append(
+                {
+                    "name": formula["name"],
+                    "version": formula.get("versions", {}).get("stable"),
+                    "license": formula.get("license"),
+                    "source_url": stable.get("url"),
+                }
+            )
 
     source_ref = os.environ.get("SOURCE_REF", f"v{APP_VERSION}")
     resources = APP / "Contents" / "Resources"

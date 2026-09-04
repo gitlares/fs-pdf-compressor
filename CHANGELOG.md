@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.13 — 2026-09-04
+
+- Reduced memory used while the application is open and waiting for files.
+- Bound temporary Ghostscript diagnostics and avoid duplicate path collections
+  during batch setup.
+- Release completed Qt worker threads promptly and avoid unnecessary result
+  table redraws, without changing compression behavior or quality profiles.
+
 ## 1.0.12 — 2026-09-02
 
 - Accept one or multiple PDF paths from Linux file-manager actions.

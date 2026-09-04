@@ -5,6 +5,17 @@
         <link>https://gitlares.github.io/fs-pdf-compressor/</link>
         <description>Signed updates for FS PDF Compressor.</description>
         <item>
+            <title>1.0.13</title>
+            <pubDate>Fri, 04 Sep 2026 10:10:48 -0600</pubDate>
+            <link>https://gitlares.github.io/fs-pdf-compressor/</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.13</sparkle:fullReleaseNotesLink>
+            <sparkle:version>1.0.13</sparkle:version>
+            <sparkle:shortVersionString>1.0.13</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.13/FS-PDF-Compressor-1.0.13-arm64.zip" length="35235631" type="application/octet-stream" sparkle:edSignature="wkQ/L5VA1hj2GdqAsIoIYyItDPv4NAi48lBCBJStodTM98InrIeXl3IPXUW1vu6lK+pk+7idsfhHaajvxogjCw=="/>
+        </item>
+        <item>
             <title>1.0.12</title>
             <pubDate>Wed, 02 Sep 2026 13:40:23 -0600</pubDate>
             <link>https://gitlares.github.io/fs-pdf-compressor/</link>
@@ -25,17 +36,6 @@
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <enclosure url="https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.11/FS-PDF-Compressor-1.0.11-arm64.zip" length="33939479" type="application/octet-stream" sparkle:edSignature="jJAyqMx+a7NA7FayVcPXalWu/50Pt3Gin3IJghyKikE466eHp2pLocDbK2vWhgUqP+0ikVpDnCe4T7XyXJqBCQ=="/>
-        </item>
-        <item>
-            <title>1.0.10</title>
-            <pubDate>Wed, 12 Aug 2026 09:01:49 -0600</pubDate>
-            <link>https://gitlares.github.io/fs-pdf-compressor/</link>
-            <sparkle:fullReleaseNotesLink>https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.10</sparkle:fullReleaseNotesLink>
-            <sparkle:version>1.0.10</sparkle:version>
-            <sparkle:shortVersionString>1.0.10</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.10/FS-PDF-Compressor-1.0.10-arm64.zip" length="33939674" type="application/octet-stream" sparkle:edSignature="eO2qWZiENu/aPIMZfjDyndjv4ruz+Vy0wEuATl3h+76Ir20tXW+42XqWR3P9qherN46xiM0UkbTJeIbVfzZLBQ=="/>
         </item>
         <item>
             <title>1.0.4</title>

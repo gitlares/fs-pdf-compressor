@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import math
+
 import AppKit as AK
 import Foundation as FN
 import objc
@@ -105,6 +107,31 @@ class ResultsTableView(AK.NSView):
         if self is None:
             return None
         self.controller = controller
+        self._heading_font = AK.NSFont.systemFontOfSize_weight_(
+            10.0, AK.NSFontWeightSemibold
+        )
+        self._body_font = AK.NSFont.systemFontOfSize_(13.0)
+        self._value_font = AK.NSFont.monospacedDigitSystemFontOfSize_weight_(
+            13.0, AK.NSFontWeightMedium
+        )
+        muted = AK.NSColor.secondaryLabelColor()
+        ink = AK.NSColor.labelColor()
+        accent = AK.NSColor.systemGreenColor()
+        left_style = self._paragraph_style(AK.NSTextAlignmentLeft)
+        right_style = self._paragraph_style(AK.NSTextAlignmentRight)
+        self._heading_left_attributes = self._text_attributes(
+            self._heading_font, muted, left_style
+        )
+        self._heading_right_attributes = self._text_attributes(
+            self._heading_font, muted, right_style
+        )
+        self._body_attributes = self._text_attributes(self._body_font, ink, left_style)
+        self._value_muted_attributes = self._text_attributes(
+            self._value_font, muted, right_style
+        )
+        self._value_accent_attributes = self._text_attributes(
+            self._value_font, accent, right_style
+        )
         return self
 
     def isFlipped(self):
@@ -114,15 +141,20 @@ class ResultsTableView(AK.NSView):
         rows = max(1, len(self.controller.statuses))
         return self.INSET * 2 + self.HEADER_HEIGHT + rows * self.ROW_HEIGHT
 
-    def _draw_text(self, value, rect, font, color, alignment=AK.NSTextAlignmentLeft):
+    def _paragraph_style(self, alignment):
         style = AK.NSMutableParagraphStyle.alloc().init()
         style.setAlignment_(alignment)
         style.setLineBreakMode_(AK.NSLineBreakByTruncatingMiddle)
-        attributes = {
+        return style
+
+    def _text_attributes(self, font, color, style):
+        return {
             AK.NSFontAttributeName: font,
             AK.NSForegroundColorAttributeName: color,
             AK.NSParagraphStyleAttributeName: style,
         }
+
+    def _draw_text(self, value, rect, attributes):
         FN.NSString.stringWithString_(value).drawInRect_withAttributes_(
             rect, attributes
         )
@@ -142,14 +174,6 @@ class ResultsTableView(AK.NSView):
         AK.NSColor.controlBackgroundColor().setFill()
         AK.NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius_(card, 12, 12).fill()
 
-        heading_font = AK.NSFont.systemFontOfSize_weight_(10.0, AK.NSFontWeightSemibold)
-        body_font = AK.NSFont.systemFontOfSize_(13.0)
-        value_font = AK.NSFont.monospacedDigitSystemFontOfSize_weight_(
-            13.0, AK.NSFontWeightMedium
-        )
-        muted = AK.NSColor.secondaryLabelColor()
-        ink = AK.NSColor.labelColor()
-        accent = AK.NSColor.systemGreenColor()
         row_left = card.origin.x + 14
         row_right = card.origin.x + card.size.width - 14
         value_width = 104
@@ -157,15 +181,12 @@ class ResultsTableView(AK.NSView):
         self._draw_text(
             "FILE",
             AK.NSMakeRect(row_left, header_y, 240, 14),
-            heading_font,
-            muted,
+            self._heading_left_attributes,
         )
         self._draw_text(
             "REDUCTION",
             AK.NSMakeRect(row_right - value_width, header_y, value_width, 14),
-            heading_font,
-            muted,
-            AK.NSTextAlignmentRight,
+            self._heading_right_attributes,
         )
 
         separator_y = card.origin.y + self.HEADER_HEIGHT
@@ -176,16 +197,28 @@ class ResultsTableView(AK.NSView):
         line.setLineWidth_(1)
         line.stroke()
 
-        for index, status in enumerate(self.controller.statuses):
+        visible_start = max(
+            0,
+            math.floor((dirty_rect.origin.y - separator_y) / self.ROW_HEIGHT),
+        )
+        visible_end = min(
+            len(self.controller.statuses),
+            max(
+                0,
+                math.ceil((AK.NSMaxY(dirty_rect) - separator_y) / self.ROW_HEIGHT),
+            ),
+        )
+        for index in range(visible_start, visible_end):
+            status = self.controller.statuses[index]
             row_y = separator_y + index * self.ROW_HEIGHT
             filename, marker, result = status.partition("   ↓ ")
             if marker:
                 detail = f"↓ {result}"
-                detail_color = accent
+                detail_attributes = self._value_accent_attributes
             else:
                 filename, separator, detail = status.partition(" — ")
                 detail = detail if separator else "Waiting"
-                detail_color = muted
+                detail_attributes = self._value_muted_attributes
             self._draw_text(
                 filename,
                 AK.NSMakeRect(
@@ -194,15 +227,12 @@ class ResultsTableView(AK.NSView):
                     max(60, card.size.width - value_width - 40),
                     18,
                 ),
-                body_font,
-                ink,
+                self._body_attributes,
             )
             self._draw_text(
                 detail,
                 AK.NSMakeRect(row_right - value_width, row_y + 11, value_width, 18),
-                value_font,
-                detail_color,
-                AK.NSTextAlignmentRight,
+                detail_attributes,
             )
             if index < len(self.controller.statuses) - 1:
                 AK.NSColor.separatorColor().setStroke()

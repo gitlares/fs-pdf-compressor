@@ -3,6 +3,7 @@
 
 import os
 import threading
+import time
 from pathlib import Path
 
 import AppKit as AK
@@ -24,18 +25,22 @@ from fs_pdf_compressor.macos_login_item import (
     open_login_items_settings,
     set_enabled as set_login_item_enabled,
 )
+from fs_pdf_compressor.macos_update_probe import probe_for_update
 from fs_pdf_compressor.macos_views import DropCanvas, ResultsTableView
 
 
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.7")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.12")
 REPOSITORY_URL = "https://github.com/gitlares/fs-pdf-compressor"
 CONTRIBUTE_URL = f"{REPOSITORY_URL}/blob/main/CONTRIBUTING.md"
 DONATE_URL = "https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ"
 DROP_ZONE_DEFAULTS_KEY = "DropZoneEnabled"
+SPARKLE_PROBE_LAST_CHECK_KEY = "SparkleLightweightProbeLastCheck"
+SPARKLE_PROBE_INTERVAL = 86_400.0
+SPARKLE_PROBE_TIMEOUT = 5.0
 
 
-def load_sparkle_updater():
+def load_sparkle_updater(start: bool = True):
     """Load the bundled Sparkle framework without making it a Python dependency."""
     contents_dir = bundle_contents_dir()
     if contents_dir is None:
@@ -47,7 +52,7 @@ def load_sparkle_updater():
         objc.loadBundle("Sparkle", globals(), bundle_path=str(framework))
         controller_class = objc.lookUpClass("SPUStandardUpdaterController")
         return controller_class.alloc().initWithStartingUpdater_updaterDelegate_userDriverDelegate_(
-            True, None, None
+            start, None, None
         )
     except Exception:
         compression_logger().exception("Could not initialize the Sparkle updater")
@@ -315,7 +320,19 @@ class PDFCompressorController(FN.NSObject):
     def _update_result(self, index, status, metrics, progress):
         self.statuses[index] = status
         self.metrics[index] = metrics
-        self.results_table.setNeedsDisplay_(True)
+        row_y = (
+            self.results_table.INSET
+            + self.results_table.HEADER_HEIGHT
+            + index * self.results_table.ROW_HEIGHT
+        )
+        self.results_table.setNeedsDisplayInRect_(
+            AK.NSMakeRect(
+                0,
+                row_y,
+                self.results_table.bounds().size.width,
+                self.results_table.ROW_HEIGHT + 1,
+            )
+        )
         self.progress.setDoubleValue_(progress)
         if self._batch_from_drop_zone and self.drop_zone is not None:
             self.drop_zone.batch_progress(index + 1, len(self.pdf_files))
@@ -373,10 +390,20 @@ class PDFCompressorController(FN.NSObject):
 
 
 class AppDelegate(FN.NSObject):
+    def init(self):
+        self = objc.super(AppDelegate, self).init()
+        if self is None:
+            return None
+        self.controller = None
+        self.updater_controller = None
+        self._update_probe_thread = None
+        self._update_probe_timer = None
+        self._pending_quick_action_paths = []
+        return self
+
     def applicationDidFinishLaunching_(self, notification):
         self.drop_zone_panel = None
         self._build_main_menu()
-        self.updater_controller = load_sparkle_updater()
         self.controller = PDFCompressorController.alloc().init()
         if FN.NSUserDefaults.standardUserDefaults().boolForKey_(
             DROP_ZONE_DEFAULTS_KEY
@@ -384,6 +411,114 @@ class AppDelegate(FN.NSObject):
             self._set_drop_zone_enabled(True)
         self.controller.window.makeKeyAndOrderFront_(None)
         AK.NSApp.activateIgnoringOtherApps_(True)
+        if self._pending_quick_action_paths:
+            self.controller._start_paths(self._pending_quick_action_paths)
+            self._pending_quick_action_paths = []
+        self._schedule_automatic_update_probe()
+
+    def _sparkle_feed_url(self):
+        feed_url = FN.NSBundle.mainBundle().objectForInfoDictionaryKey_("SUFeedURL")
+        return str(feed_url) if feed_url else None
+
+    def _ensure_sparkle_updater(self):
+        if self.updater_controller is None:
+            self.updater_controller = load_sparkle_updater()
+        return self.updater_controller
+
+    def _schedule_automatic_update_probe(self):
+        if self._sparkle_feed_url() is None:
+            return
+        self._update_probe_timer = (
+            FN.NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+                SPARKLE_PROBE_INTERVAL,
+                self,
+                "runAutomaticUpdateProbe:",
+                None,
+                True,
+            )
+        )
+        self._start_automatic_update_probe_if_due()
+
+    def runAutomaticUpdateProbe_(self, timer):
+        self._start_automatic_update_probe_if_due()
+
+    def _start_automatic_update_probe_if_due(self):
+        if self.updater_controller is not None or self._update_probe_thread is not None:
+            return
+        feed_url = self._sparkle_feed_url()
+        if feed_url is None:
+            return
+        defaults = FN.NSUserDefaults.standardUserDefaults()
+        last_check = defaults.doubleForKey_(SPARKLE_PROBE_LAST_CHECK_KEY)
+        if last_check and time.time() - last_check < SPARKLE_PROBE_INTERVAL:
+            return
+        self._update_probe_thread = threading.Thread(
+            target=self._automatic_update_probe_worker,
+            args=(feed_url,),
+            daemon=True,
+        )
+        self._update_probe_thread.start()
+
+    def _automatic_update_probe_worker(self, feed_url):
+        result = probe_for_update(
+            feed_url,
+            APP_VERSION,
+            timeout=SPARKLE_PROBE_TIMEOUT,
+        )
+        AppHelper.callAfter(self._finish_automatic_update_probe, result)
+
+    def _finish_automatic_update_probe(self, result):
+        self._update_probe_thread = None
+        if result is None:
+            compression_logger().info("Automatic update probe could not inspect the appcast")
+            return
+        FN.NSUserDefaults.standardUserDefaults().setDouble_forKey_(
+            time.time(), SPARKLE_PROBE_LAST_CHECK_KEY
+        )
+        if not result:
+            return
+        updater_controller = self._ensure_sparkle_updater()
+        if updater_controller is None:
+            return
+        try:
+            updater = updater_controller.updater()
+            if updater.automaticallyChecksForUpdates():
+                updater.checkForUpdatesInBackground()
+        except Exception:
+            compression_logger().exception("Could not start Sparkle after update probe")
+
+    def application_openURLs_(self, application, urls):
+        """Receive PDF selections sent by the bundled Finder Quick Action."""
+        paths = []
+        for url in urls:
+            if url.isFileURL():
+                paths.append(str(url.path()))
+                continue
+            if url.scheme() != "fspdfcompressor" or url.host() != "compress":
+                continue
+            components = FN.NSURLComponents.componentsWithURL_resolvingAgainstBaseURL_(
+                url, False
+            )
+            for item in components.queryItems() or []:
+                if item.name() != "bookmark" or not item.value():
+                    continue
+                bookmark = FN.NSData.alloc().initWithBase64EncodedString_options_(
+                    item.value(), 0
+                )
+                if bookmark is None:
+                    continue
+                resolved_url, _stale, error = (
+                    FN.NSURL.URLByResolvingBookmarkData_options_relativeToURL_bookmarkDataIsStale_error_(
+                        bookmark, 0, None, None, None
+                    )
+                )
+                if resolved_url is not None and error is None and resolved_url.isFileURL():
+                    paths.append(str(resolved_url.path()))
+        if self.controller is None:
+            self._pending_quick_action_paths.extend(paths)
+            return
+        self.controller.show_main_window()
+        self.controller._start_paths(paths)
 
     def _build_main_menu(self):
         main_menu = AK.NSMenu.alloc().init()
@@ -517,7 +652,8 @@ class AppDelegate(FN.NSObject):
         )
 
     def checkForUpdates_(self, sender):
-        if self.updater_controller is None:
+        updater_controller = self._ensure_sparkle_updater()
+        if updater_controller is None:
             alert = AK.NSAlert.alloc().init()
             alert.setMessageText_("Updates are unavailable")
             alert.setInformativeText_(
@@ -526,7 +662,7 @@ class AppDelegate(FN.NSObject):
             )
             alert.runModal()
             return
-        self.updater_controller.checkForUpdates_(sender)
+        updater_controller.checkForUpdates_(sender)
 
     def toggleDropZone_(self, sender):
         enabled = sender.state() != AK.NSControlStateValueOn

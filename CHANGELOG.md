@@ -14,6 +14,12 @@
   unusually noisy failures or large selections.
 - Limit result-table redraw work to changed or visible rows on macOS, and
   release the completed Qt worker and thread on Linux.
+- Add a Windows 11 x64 distribution: a per-user installer and portable ZIP,
+  both published with SHA-256 checksums and the required Ghostscript AGPL
+  notices and corresponding-source offer.
+- Add Windows Explorer's **Compress with FS PDF Compressor** action, a
+  single-instance desktop Drop Zone, compression-result reductions, and
+  Recycle Bin preservation of an original PDF that is safely replaced.
 
 ## 1.0.12 — 2026-09-02
 

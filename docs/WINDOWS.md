@@ -4,6 +4,18 @@ FS PDF Compressor can be built on Windows from this repository. The Windows
 edition uses the same local compression engine and three quality profiles as
 the macOS and Linux editions. It is distributed under AGPL-3.0-or-later.
 
+## Install the public build
+
+For Windows 11 x64, download the per-user installer or portable ZIP from the
+[1.0.13 release](https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.13).
+Each artifact has a matching SHA-256 file. The installer includes the
+unmodified AGPL Ghostscript runtime and needs no administrator rights.
+
+The Windows build is not code-signed yet, so Windows may show SmartScreen.
+Only install it from the official release after verifying the published
+checksum. Updates are manual for now: download a newer installer when a new
+release is published.
+
 ## Requirements
 
 Build on Windows 11 x64. Windows 11 on ARM also works when using an **x64
@@ -80,7 +92,12 @@ versions from the project's GitHub releases after they are published.
 
 ## Reproducible release builds
 
-For a public release, build from the exact Git tag that defines the shared
-version used by macOS, Linux, and Windows. Set `APP_VERSION` and `SOURCE_REF`
-to that version/tag when producing the installer. Do not attach a Windows
-binary built from a later commit to an older release tag.
+For ordinary public releases, build from the exact Git tag that defines the
+shared version used by macOS, Linux, and Windows. Set `APP_VERSION` and
+`SOURCE_REF` to that version/tag when producing the installer.
+
+The first Windows package is published alongside the existing 1.0.13 release
+without rebuilding the already published macOS, Linux, or Snap packages. Its
+release notes identify the exact public source commit used for the Windows
+build. Future shared releases should build every published platform from the
+same version tag.

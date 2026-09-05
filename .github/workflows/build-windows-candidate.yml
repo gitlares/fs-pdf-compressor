@@ -1,0 +1,85 @@
+name: Build private Windows candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to assemble for private testing
+        required: true
+        default: "1.0.13"
+
+permissions:
+  contents: read
+
+jobs:
+  assemble:
+    runs-on: windows-2022
+    env:
+      APP_VERSION: ${{ inputs.version }}
+      SOURCE_REF: ${{ github.sha }}
+      DIST_DIR: ci-windows-build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: "x64"
+
+      - name: Install pinned AGPL Ghostscript runtime
+        shell: pwsh
+        run: |
+          $runtime = Join-Path $env:RUNNER_TEMP "gs10071w64.exe"
+          Invoke-WebRequest -Uri "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10071/gs10071w64.exe" -OutFile $runtime
+          if ((Get-FileHash -Algorithm SHA256 $runtime).Hash.ToLower() -ne "3a4c28d0aac47aa7cccd35a5932c55110376e9dbd966898dde388b7faba444a4") {
+            throw "Ghostscript runtime checksum did not match"
+          }
+          Start-Process -FilePath $runtime -ArgumentList "/S" -Wait
+          $runtimeRoot = "C:\Program Files\gs\gs10.07.1"
+          if (-not (Test-Path "$runtimeRoot\bin\gswin64c.exe")) {
+            throw "The Ghostscript installer did not provide gswin64c.exe"
+          }
+          "GHOSTSCRIPT_ROOT=$runtimeRoot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Install Inno Setup compiler
+        shell: pwsh
+        run: |
+          choco install innosetup --version=6.7.1 --no-progress --yes
+          $compiler = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $compiler)) {
+            throw "Inno Setup compiler was not installed"
+          }
+          "ISCC=$compiler" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build unsigned private installer
+        shell: pwsh
+        run: |
+          python -m venv .windows-build-venv
+          .windows-build-venv\Scripts\python -m pip install --upgrade pip
+          .windows-build-venv\Scripts\python -m pip install -r requirements-windows.txt
+          .windows-build-venv\Scripts\python build_windows.py
+
+      - name: Verify candidate contents
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem ci-windows-build -Filter "*-setup.exe" | Select-Object -First 1
+          $zip = Get-ChildItem ci-windows-build -Filter "*.zip" | Select-Object -First 1
+          if ($null -eq $installer -or $null -eq $zip) { throw "Expected installer and ZIP were not generated" }
+          if (-not (Test-Path "$($installer.FullName).sha256")) { throw "Installer checksum is missing" }
+          if (-not (Test-Path "$($zip.FullName).sha256")) { throw "ZIP checksum is missing" }
+          Expand-Archive -Path $zip.FullName -DestinationPath "$env:RUNNER_TEMP\candidate" -Force
+          $app = Join-Path $env:RUNNER_TEMP "candidate\FS PDF Compressor\_internal"
+          @(
+            "$app\ghostscript\bin\gswin64c.exe",
+            "$app\ghostscript\AGPL-3.0.txt",
+            "$app\SOURCE_OFFER.md",
+            "$app\THIRD_PARTY_MANIFEST.json"
+          ) | ForEach-Object { if (-not (Test-Path $_)) { throw "Missing runtime compliance file: $_" } }
+
+      - name: Upload private Windows candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: fs-pdf-compressor-${{ inputs.version }}-windows-x86_64-private
+          path: ci-windows-build/*
+          if-no-files-found: error
+          retention-days: 7

@@ -122,6 +122,14 @@ compression engine and profiles, with a Qt interface designed to match the
 macOS app. The x86_64 AppImage bundles Ghostscript and has an in-app update
 check; see [Linux instructions](docs/LINUX.md).
 
+### Windows
+
+The Windows edition uses the shared Qt interface and can be built from source
+as an x86_64 per-user installer. See the [Windows build and test
+instructions](docs/WINDOWS.md). A public Windows installer will be released
+only with the matching shared application version; until then, build it from
+source.
+
 ## Code structure
 
 The application keeps compression behavior independent from its interfaces:
@@ -132,8 +140,10 @@ The application keeps compression behavior independent from its interfaces:
 - `native_app.py` and the `macos_*` modules provide the AppKit application.
 - `linux_app.py` and the `linux_*` modules provide the Qt application and
   AppImage update flow.
-- `build_macos.py` and `build_linux.py` package the same source for their
-  respective platforms.
+- `windows_app.py` and `linux_app.py` provide the shared Qt application for
+  Windows and Linux; `native_app.py` provides the macOS application.
+- `build_macos.py`, `build_linux.py`, and `build_windows.py` package the same
+  source for their respective platforms.
 
 ## Acknowledgements
 

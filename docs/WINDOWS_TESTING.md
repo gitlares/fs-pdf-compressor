@@ -1,7 +1,7 @@
-# Private Windows candidate testing
+# Windows candidate testing
 
-Windows support is developed only on the `codex/windows-trash-support` branch
-until the candidate has passed manual testing. Do not merge or publish it.
+This checklist is for a candidate produced before a shared public release. For
+the reproducible open-source build instructions, see [Windows builds](WINDOWS.md).
 
 ## Build prerequisites
 
@@ -39,9 +39,13 @@ installer itself has a problem:
 4. With **Keep original** off, confirm the compressed PDF retains the original
    filename and the previous PDF appears in the Windows Recycle Bin.
 5. Restore the previous PDF from the Recycle Bin to confirm it is recoverable.
-6. With **Keep original** on, confirm the original remains beside
+6. Launch the installed shortcut twice and confirm the existing window is
+   brought forward instead of opening another application instance.
+7. Close the main window, confirm the desktop drop zone stays available, and
+   double-click it to reopen the app.
+8. With **Keep original** on, confirm the original remains beside
    `name compressed.pdf`.
-7. Close and reopen the app, then repeat a batch with **Again**.
+9. Repeat a batch with **Again**.
 
 Record the Windows edition, architecture, Ghostscript version, and any
 SmartScreen message with the test result. Do not distribute the ZIP beyond

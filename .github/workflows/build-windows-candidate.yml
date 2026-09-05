@@ -93,7 +93,7 @@ jobs:
       - name: Upload private Windows candidate
         uses: actions/upload-artifact@v4
         with:
-          name: fs-pdf-compressor-${{ inputs.version }}-windows-x86_64-private
+          name: fs-pdf-compressor-${{ inputs.version || '1.0.13' }}-windows-x86_64-private
           path: ci-windows-build/*
           if-no-files-found: error
           retention-days: 7

@@ -18,6 +18,17 @@ class WindowsBuildTests(unittest.TestCase):
         self.assertIn('PDFCompresor.png', source)
         self.assertTrue((Path(build_windows.__file__).parent / "assets" / "PDFCompresor.ico").is_file())
 
+    def test_windows_installer_registers_explorer_action_and_product_icon(self):
+        installer = (
+            Path(build_windows.__file__).parent / "installer" / "windows.iss"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("SetupIconFile", installer)
+        self.assertIn("IconFilename", installer)
+        self.assertIn("Compress with FS PDF Compressor", installer)
+        self.assertIn("MultiSelectModel", installer)
+        self.assertIn("Player", installer)
+
     def test_ghostscript_root_prefers_explicit_runtime(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "gs10.07.1"

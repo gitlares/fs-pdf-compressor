@@ -35,18 +35,25 @@ SolidCompression=yes
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=lowest
-UninstallDisplayIcon={app}\FS PDF Compressor.exe
+UninstallDisplayIcon={app}\_internal\PDFCompresor.ico
+SetupIconFile={#SourceDir}\_internal\PDFCompresor.ico
 WizardStyle=modern
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\FS PDF Compressor"; Filename: "{app}\FS PDF Compressor.exe"
-Name: "{autodesktop}\FS PDF Compressor"; Filename: "{app}\FS PDF Compressor.exe"; Tasks: desktopicon
+Name: "{autoprograms}\FS PDF Compressor"; Filename: "{app}\FS PDF Compressor.exe"; IconFilename: "{app}\_internal\PDFCompresor.ico"
+Name: "{autodesktop}\FS PDF Compressor"; Filename: "{app}\FS PDF Compressor.exe"; IconFilename: "{app}\_internal\PDFCompresor.ico"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"
+
+[Registry]
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.pdf\shell\CompressWithFSPDFCompressor"; ValueType: string; ValueName: "MUIVerb"; ValueData: "Compress with FS PDF Compressor"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.pdf\shell\CompressWithFSPDFCompressor"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Player"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.pdf\shell\CompressWithFSPDFCompressor"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\_internal\PDFCompresor.ico"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.pdf\shell\CompressWithFSPDFCompressor\command"; ValueType: string; ValueData: """{app}\FS PDF Compressor.exe"" ""%1"""
 
 [Run]
 Filename: "{app}\FS PDF Compressor.exe"; Description: "Launch FS PDF Compressor"; Flags: nowait postinstall skipifsilent

@@ -52,6 +52,11 @@ future release process explicitly adds code signing, so Windows may show a
 SmartScreen warning. Verify the SHA-256 file before testing a build obtained
 from someone else.
 
+The installer also adds **Compress with FS PDF Compressor** to the Explorer
+menu for PDF files. It is a per-user entry and accepts multiple selected PDFs.
+On Windows 11 it may appear under **Show more options**, depending on the
+Explorer context-menu mode in use.
+
 ## Test before distributing
 
 Install the setup executable on a clean Windows VM and check:

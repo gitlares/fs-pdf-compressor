@@ -192,6 +192,8 @@ def main() -> None:
         f"{ROOT / 'assets' / 'desktop-drop-hole.png'}{os.pathsep}.",
         "--add-data",
         f"{ROOT / 'assets' / 'PDFCompresor.png'}{os.pathsep}.",
+        "--add-data",
+        f"{ROOT / 'assets' / 'PDFCompresor.ico'}{os.pathsep}.",
         "windows_app.py",
     )
     application = ROOT / "dist" / APP_NAME

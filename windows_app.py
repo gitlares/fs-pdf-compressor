@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -37,6 +38,26 @@ class WindowsPDFCompressorWindow(PDFCompressorWindow):
             settings.setValue("dropZoneEnabled", True)
         super().__init__()
         self.setWindowIcon(QtGui.QIcon(str(_app_icon_path())))
+        self._external_paths: list[str] = []
+        self._external_paths_timer = QtCore.QTimer(self)
+        self._external_paths_timer.setSingleShot(True)
+        self._external_paths_timer.timeout.connect(self._start_external_paths)
+
+    def queue_external_paths(self, paths: list[str]) -> None:
+        """Combine Explorer launches into one drop-zone compression batch."""
+        for path in paths:
+            if path not in self._external_paths:
+                self._external_paths.append(path)
+        self.show_main_window()
+        self._external_paths_timer.start(250)
+
+    def _start_external_paths(self) -> None:
+        if self.processing:
+            self._external_paths_timer.start(250)
+            return
+        paths, self._external_paths = self._external_paths, []
+        if paths:
+            self.start_drop_zone_paths(paths)
 
 class WindowsInstanceServer:
     """Bring the existing window forward when a shortcut is launched again."""
@@ -49,12 +70,12 @@ class WindowsInstanceServer:
         self._server.newConnection.connect(self._show_existing_window)
 
     @staticmethod
-    def notify_existing_instance() -> bool:
+    def notify_existing_instance(paths: list[str]) -> bool:
         client = QtNetwork.QLocalSocket()
         client.connectToServer(_INSTANCE_SERVER_NAME, QtCore.QIODevice.WriteOnly)
         if not client.waitForConnected(400):
             return False
-        client.write(b"show")
+        client.write(json.dumps(paths).encode("utf-8"))
         client.waitForBytesWritten(400)
         client.disconnectFromServer()
         return True
@@ -62,10 +83,17 @@ class WindowsInstanceServer:
     def _show_existing_window(self):
         while self._server.hasPendingConnections():
             client = self._server.nextPendingConnection()
-            client.readAll()
+            client.waitForReadyRead(200)
+            try:
+                paths = json.loads(bytes(client.readAll()).decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                paths = []
             client.disconnectFromServer()
             client.deleteLater()
-        self._window.show_main_window()
+            if isinstance(paths, list) and all(isinstance(path, str) for path in paths):
+                self._window.queue_external_paths(paths)
+            else:
+                self._window.show_main_window()
 
 
 def main() -> int:
@@ -74,7 +102,8 @@ def main() -> int:
     application.setApplicationVersion(APP_VERSION)
     application.setQuitOnLastWindowClosed(False)
 
-    if WindowsInstanceServer.notify_existing_instance():
+    paths = [argument for argument in sys.argv[1:] if not argument.startswith("-")]
+    if WindowsInstanceServer.notify_existing_instance(paths):
         return 0
 
     # A stale server name can remain after a forced shutdown.  It is safe to
@@ -84,9 +113,8 @@ def main() -> int:
     application.instance_server = WindowsInstanceServer(window)
     window.show()
 
-    paths = [argument for argument in sys.argv[1:] if not argument.startswith("-")]
     if paths:
-        QtCore.QTimer.singleShot(0, lambda: window.start_paths(paths))
+        QtCore.QTimer.singleShot(0, lambda: window.queue_external_paths(paths))
     return application.exec()
 
 

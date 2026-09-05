@@ -1,14 +1,22 @@
 const fallback = {
-  version: "v1.0.12",
-  url: "https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.12/FS-PDF-Compressor-1.0.12-arm64.dmg",
+  version: "v1.0.13",
+  macosUrl: "https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.13/FS-PDF-Compressor-1.0.13-arm64.dmg",
+  windowsUrl: "https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.13/FS-PDF-Compressor-1.0.13-windows-x86_64-setup.exe",
 };
 
 function applyRelease(release) {
-  const asset = release.assets?.find(({ name }) => name.endsWith("-arm64.dmg"));
-  if (!asset) return;
+  const macosAsset = release.assets?.find(({ name }) => name.endsWith("-arm64.dmg"));
+  const windowsAsset = release.assets?.find(({ name }) => name.endsWith("-windows-x86_64-setup.exe"));
 
-  for (const id of ["download-button", "download-button-bottom"]) {
-    document.getElementById(id).href = asset.browser_download_url;
+  if (macosAsset) {
+    for (const id of ["download-button", "download-button-bottom"]) {
+      document.getElementById(id).href = macosAsset.browser_download_url;
+    }
+  }
+  if (windowsAsset) {
+    for (const id of ["windows-download-button", "windows-download-button-bottom"]) {
+      document.getElementById(id).href = windowsAsset.browser_download_url;
+    }
   }
   document.getElementById("release-version").textContent = release.tag_name;
 
@@ -32,7 +40,10 @@ function applyRelease(release) {
 }
 
 for (const id of ["download-button", "download-button-bottom"]) {
-  document.getElementById(id).href = fallback.url;
+  document.getElementById(id).href = fallback.macosUrl;
+}
+for (const id of ["windows-download-button", "windows-download-button-bottom"]) {
+  document.getElementById(id).href = fallback.windowsUrl;
 }
 document.getElementById("release-version").textContent = fallback.version;
 

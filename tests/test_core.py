@@ -8,11 +8,15 @@ from pathlib import Path
 from unittest import mock
 
 from fs_pdf_compressor.core import (
+    _error_output_tail,
     _ghostscript_command,
+    _ghostscript_subprocess_options,
+    _original_backup_path,
     compress_pdf,
     compressed_copy_path,
     expand_pdf_paths,
 )
+from fs_pdf_compressor.system_trash import TrashError
 
 
 def _write_optional_content_pdf(path: Path) -> None:
@@ -194,8 +198,62 @@ class PdfPathTests(unittest.TestCase):
 
             self.assertEqual(destination, str(root / "report compressed 2.pdf"))
 
+    def test_original_backup_path_never_overwrites_an_existing_copy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            original = root / "report.pdf"
+            original.touch()
+            (root / "report original.pdf").touch()
+
+            destination = _original_backup_path(str(original))
+
+            self.assertEqual(destination, str(root / "report original 2.pdf"))
+
+
+class ProcessOutputTests(unittest.TestCase):
+    def test_error_output_tail_is_bounded(self):
+        with tempfile.SpooledTemporaryFile(max_size=16, mode="w+b") as output:
+            output.write(b"x" * 64 + b"final diagnostic")
+
+            self.assertEqual(_error_output_tail(output, limit=16), "final diagnostic")
+
+    def test_compression_discards_stdout_and_spools_stderr(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / "original.pdf"
+            original.write_bytes(b"original payload")
+            received = {}
+
+            def fail_with_diagnostic(command, **kwargs):
+                received.update(kwargs)
+                kwargs["stderr"].write(b"bad input")
+                return subprocess.CompletedProcess(command, 1)
+
+            with (
+                mock.patch(
+                    "fs_pdf_compressor.core.get_ghostscript_config",
+                    return_value=("gs", {}),
+                ),
+                mock.patch(
+                    "fs_pdf_compressor.core.subprocess.run",
+                    side_effect=fail_with_diagnostic,
+                ),
+            ):
+                status, metrics = compress_pdf(str(original), "/ebook", keep_original=False)
+
+            self.assertEqual(status, "original.pdf — compression failed")
+            self.assertIsNone(metrics)
+            self.assertIs(received["stdout"], subprocess.DEVNULL)
+            self.assertNotIn("capture_output", received)
+
 
 class GhostscriptCommandTests(unittest.TestCase):
+    def test_windows_ghostscript_runs_without_a_console_window(self):
+        with mock.patch("fs_pdf_compressor.core.os.name", "nt"):
+            self.assertEqual(
+                _ghostscript_subprocess_options(),
+                {"creationflags": 0x08000000},
+            )
+
     def test_pdfwrite_preserves_optional_content_and_screen_appearance(self):
         command = _ghostscript_command("gs", "output.pdf", "input.pdf", "/ebook")
 
@@ -339,6 +397,10 @@ class GhostscriptCommandTests(unittest.TestCase):
                     return_value=("gs", {}),
                 ),
                 mock.patch("fs_pdf_compressor.core.subprocess.run", side_effect=write_smaller),
+                mock.patch(
+                    "fs_pdf_compressor.core.move_to_system_trash",
+                    side_effect=lambda path: path.unlink(),
+                ) as move_to_trash,
             ):
                 status, metrics = compress_pdf(str(original), "/ebook", keep_original=False)
 
@@ -346,6 +408,35 @@ class GhostscriptCommandTests(unittest.TestCase):
             self.assertIn("original.pdf", status)
             self.assertEqual(metrics, {"original_size": 16, "saved_size": 11})
             self.assertFalse(Path(f"{original}.temp.pdf").exists())
+            move_to_trash.assert_called_once()
+
+    def test_compress_pdf_keeps_visible_backup_when_trash_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / "original.pdf"
+            original.write_bytes(b"original payload")
+
+            def write_smaller(command, **_kwargs):
+                output = next(value for value in command if value.startswith("-sOutputFile="))
+                Path(output.removeprefix("-sOutputFile=")).write_bytes(b"small")
+                return subprocess.CompletedProcess(command, 0, b"", b"")
+
+            with (
+                mock.patch(
+                    "fs_pdf_compressor.core.get_ghostscript_config",
+                    return_value=("gs", {}),
+                ),
+                mock.patch("fs_pdf_compressor.core.subprocess.run", side_effect=write_smaller),
+                mock.patch(
+                    "fs_pdf_compressor.core.move_to_system_trash",
+                    side_effect=TrashError("trash unavailable"),
+                ),
+            ):
+                status, metrics = compress_pdf(str(original), "/ebook", keep_original=False)
+
+            self.assertEqual(original.read_bytes(), b"small")
+            self.assertEqual((original.parent / "original original.pdf").read_bytes(), b"original payload")
+            self.assertIn("(original retained)", status)
+            self.assertEqual(metrics, {"original_size": 16, "saved_size": 11})
 
     def test_compress_pdf_keeps_original_when_output_is_not_smaller(self):
         with tempfile.TemporaryDirectory() as directory:

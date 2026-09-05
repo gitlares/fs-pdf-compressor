@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.0.13 — 2026-09-04
+
+- Reduced the app's idle memory footprint, especially on macOS, so FS PDF
+  Compressor stays lighter while waiting for files without changing its
+  compression workflow or quality profiles.
+- Keep Sparkle's signed update installation intact, but defer loading its
+  full framework until an update may be available or the user chooses
+  **Check for Updates…**. A small HTTPS metadata check avoids paying that
+  memory cost during ordinary use.
+- Bound Ghostscript diagnostic output and avoid temporary duplicate path
+  collections during batch setup, reducing unnecessary memory retained by
+  unusually noisy failures or large selections.
+- Limit result-table redraw work to changed or visible rows on macOS, and
+  release the completed Qt worker and thread on Linux.
+- Add a Windows 11 x64 distribution: a per-user installer and portable ZIP,
+  both published with SHA-256 checksums and the required Ghostscript AGPL
+  notices and corresponding-source offer.
+- Add Windows Explorer's **Compress with FS PDF Compressor** action, a
+  single-instance desktop Drop Zone, compression-result reductions, and
+  Recycle Bin preservation of an original PDF that is safely replaced.
+
 ## 1.0.12 — 2026-09-02
 
 - Add **Compress with FS PDF Compressor** to Finder's **Quick Actions** menu

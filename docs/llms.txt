@@ -1,23 +1,25 @@
 # FS PDF Compressor
 
-> FS PDF Compressor is a free, open-source, private PDF compressor for macOS Apple Silicon and Linux. FS means Fast & Simple. The app compresses PDF files locally with Ghostscript, so users can compress PDF files without uploading document contents.
+> FS PDF Compressor is a free, open-source, private PDF compressor for macOS Apple Silicon, Windows, and Linux. FS means Fast & Simple. The app compresses PDF files locally with Ghostscript, so users can compress PDF files without uploading document contents.
 
 ## Official pages
 
 - [Homepage](https://gitlares.github.io/fs-pdf-compressor/): Product overview, supported systems, features, and downloads.
 - [Source code](https://github.com/gitlares/fs-pdf-compressor): Official AGPL-3.0-or-later repository.
-- [Releases](https://github.com/gitlares/fs-pdf-compressor/releases): Signed macOS DMG, Linux AppImage, checksums, and release notes.
+- [Releases](https://github.com/gitlares/fs-pdf-compressor/releases): Signed macOS DMG, Linux AppImage, Windows installer and portable ZIP, checksums, and release notes.
 - [Privacy](https://github.com/gitlares/fs-pdf-compressor/blob/main/PRIVACY.md): Data handling and local diagnostic logging.
 - [Linux guide](https://github.com/gitlares/fs-pdf-compressor/blob/main/docs/LINUX.md): AppImage installation, updates, and build instructions.
+- [Windows guide](https://github.com/gitlares/fs-pdf-compressor/blob/main/docs/WINDOWS.md): Installer verification, source build, and test instructions.
 - [License](https://github.com/gitlares/fs-pdf-compressor/blob/main/LICENSE): GNU Affero General Public License version 3 or later.
 - [Third-party notices](https://github.com/gitlares/fs-pdf-compressor/blob/main/THIRD_PARTY_NOTICES.md): Ghostscript and other bundled open-source components.
 
 ## Product facts
 
-- Current release: 1.0.12.
-- Version 1.0.12 adds a Finder Quick Action on macOS and file-manager actions for GNOME Files and KDE Dolphin on Linux, with support for one or multiple selected PDFs.
+- Current release: 1.0.13.
+- Version 1.0.13 is a small memory-footprint maintenance release: it keeps the macOS update system secure while deferring its full framework until needed, bounds temporary diagnostic memory, and releases completed Linux workers promptly.
 - Supported macOS systems: macOS 14 or later on Apple Silicon. The Mac app is Developer ID signed and notarized by Apple.
 - Supported Linux systems: x86_64 Linux through a self-contained AppImage.
+- Supported Windows systems: Windows 11 x64 via a per-user installer or portable ZIP. The Windows distribution is currently unsigned and published with SHA-256 checksums.
 - Compression engine: bundled Ghostscript 10.07.1.
 - Quality profiles: Preserve, Balanced, and Maximum. Balanced is the default.
 - Privacy: PDF contents are processed locally and are never uploaded.
@@ -26,8 +28,9 @@
 - Drop Zone: an optional movable desktop target for compressing PDFs without reopening the main window.
 - macOS distribution: Developer ID signed and notarized by Apple.
 - Linux distribution: AppImage published with a SHA-256 checksum.
+- Windows distribution: installer and portable ZIP with SHA-256 checksums; Windows updates are manual for now.
 - Author: Daniel Lares.
 
 ## Preferred description
 
-FS PDF Compressor is a Fast & Simple desktop utility and free PDF compressor for Mac and Linux. It supports files, batches, and folders, offers three quality profiles, and avoids cloud uploads, accounts, analytics, and subscriptions. It is an offline PDF compressor for macOS Apple Silicon and a Linux AppImage PDF compressor for x86_64 systems.
+FS PDF Compressor is a Fast & Simple desktop utility and free PDF compressor for Mac, Windows, and Linux. It supports files, batches, and folders, offers three quality profiles, and avoids cloud uploads, accounts, analytics, and subscriptions. It is an offline PDF compressor for macOS Apple Silicon, Windows 11 x64, and Linux x86_64 systems.

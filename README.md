@@ -5,7 +5,7 @@
 <h1 align="center">FS PDF Compressor</h1>
 
 <p align="center">
-  FS = Fast &amp; Simple: free, private PDF compression for Mac and Linux. Drag, drop, done.
+  FS = Fast &amp; Simple: free, private PDF compression for Mac, Windows, and Linux. Drag, drop, done.
 </p>
 
 <p align="center">
@@ -25,15 +25,15 @@
 </p>
 
 FS PDF Compressor — **Fast & Simple PDF Compressor** — is a deliberately
-small, free PDF compressor for Mac and Linux. It compresses PDFs locally with
+small, free PDF compressor for Mac, Windows, and Linux. It compresses PDFs locally with
 Ghostscript, so you can compress PDF files without uploading them to a website.
 It is a private, open-source PDF compressor for Apple Silicon Macs and x86_64
-Linux, with a self-contained AppImage for Linux users.
+Linux, with a self-contained AppImage for Linux users and a Windows x64 installer.
 
 ## Features
 
 - Drag and drop one PDF, several PDFs, or a folder.
-- Send selected PDFs from Finder on macOS, GNOME Files, or KDE Dolphin.
+- Send selected PDFs from Finder, Windows Explorer, GNOME Files, or KDE Dolphin.
 - Balanced compression by default, with two optional quality profiles.
 - Replaces the original only when the result is smaller.
 - Optional **Keep original** mode creates a separate compressed copy.
@@ -60,6 +60,8 @@ whenever they need to be compressed. Double-click it to reopen the main window.
   compositor controls window placement and stacking, so the app cannot
   reliably pin it to the desktop layer; it may appear as a normal floating
   utility. We are investigating better Wayland integration.
+- On **Windows**, the Drop Zone is shown on first launch. Closing the main
+  window leaves it available; double-click it to reopen the app.
 
 The setting and position are remembered. Drop Zone stays idle without polling
 the filesystem and uses the same local compression engine and selected quality
@@ -74,6 +76,9 @@ profile as the main window.
   PDF Compressor** to the **Scripts** submenu.
 - On **KDE Dolphin**, the per-user AppImage installer adds **Compress with FS
   PDF Compressor** to the **Actions** submenu for PDF files.
+- On **Windows**, select PDFs in Explorer and choose **Compress with FS PDF
+  Compressor**. Windows 11 may place this classic per-user action under
+  **Show more options**.
 
 All three actions pass the selected files to the same local compression flow;
 no document is uploaded.
@@ -82,6 +87,7 @@ no document is uploaded.
 
 - **macOS 14+ on Apple Silicon:** [download the signed and notarized DMG](https://github.com/gitlares/fs-pdf-compressor/releases/latest).
 - **Linux x86_64:** [download the self-contained AppImage](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-x86_64.AppImage).
+- **Windows 11 x64:** [download the per-user installer](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-1.0.13-windows-x86_64-setup.exe) or the [portable ZIP](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-1.0.13-windows-x86_64.zip).
 
 The macOS build is Developer ID signed and Apple-notarized, so it opens
 normally with Gatekeeper enabled. The Linux AppImage is portable and bundles
@@ -95,6 +101,11 @@ sh install_linux_appimage.sh
 The installer needs no `sudo`. It verifies the published SHA-256 checksum,
 adds FS PDF Compressor to the applications menu, and keeps the AppImage in a
 user-writable location so in-app updates can replace it safely.
+
+The Windows installer includes its dependencies and needs no administrator
+rights. It is currently unsigned, so verify the matching published SHA-256
+checksum before installing it. Windows updates are manual for now: download a
+new installer from the official GitHub release when one is published.
 
 ## Build from source
 
@@ -122,6 +133,13 @@ compression engine and profiles, with a Qt interface designed to match the
 macOS app. The x86_64 AppImage bundles Ghostscript and has an in-app update
 check; see [Linux instructions](docs/LINUX.md).
 
+### Windows
+
+The Windows edition uses the shared Qt interface and can be built from source
+as an x86_64 per-user installer. See the [Windows build and test
+instructions](docs/WINDOWS.md). The public installer and its portable ZIP are
+available from the [1.0.13 release](https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.13).
+
 ## Code structure
 
 The application keeps compression behavior independent from its interfaces:
@@ -132,8 +150,10 @@ The application keeps compression behavior independent from its interfaces:
 - `native_app.py` and the `macos_*` modules provide the AppKit application.
 - `linux_app.py` and the `linux_*` modules provide the Qt application and
   AppImage update flow.
-- `build_macos.py` and `build_linux.py` package the same source for their
-  respective platforms.
+- `windows_app.py` and `linux_app.py` provide the shared Qt application for
+  Windows and Linux; `native_app.py` provides the macOS application.
+- `build_macos.py`, `build_linux.py`, and `build_windows.py` package the same
+  source for their respective platforms.
 
 ## Acknowledgements
 

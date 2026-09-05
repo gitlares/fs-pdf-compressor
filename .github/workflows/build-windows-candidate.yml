@@ -37,7 +37,7 @@ jobs:
           python-version: "3.12"
           architecture: "x64"
 
-      - name: Install pinned AGPL Ghostscript runtime
+      - name: Extract pinned AGPL Ghostscript runtime
         shell: pwsh
         run: |
           $runtime = Join-Path $env:RUNNER_TEMP "gs10071w64.exe"
@@ -45,11 +45,14 @@ jobs:
           if ((Get-FileHash -Algorithm SHA256 $runtime).Hash.ToLower() -ne "3a4c28d0aac47aa7cccd35a5932c55110376e9dbd966898dde388b7faba444a4") {
             throw "Ghostscript runtime checksum did not match"
           }
-          Start-Process -FilePath $runtime -ArgumentList "/S" -Wait
-          $runtimeRoot = "C:\Program Files\gs\gs10.07.1"
-          if (-not (Test-Path "$runtimeRoot\bin\gswin64c.exe")) {
-            throw "The Ghostscript installer did not provide gswin64c.exe"
+          $extractRoot = Join-Path $env:RUNNER_TEMP "ghostscript"
+          & "C:\Program Files\7-Zip\7z.exe" x $runtime "-o$extractRoot" -y
+          if ($LASTEXITCODE -ne 0) { throw "Could not extract the official Ghostscript runtime" }
+          $console = Get-ChildItem -Path $extractRoot -Filter "gswin64c.exe" -Recurse | Select-Object -First 1
+          if ($null -eq $console) {
+            throw "The extracted Ghostscript runtime did not provide gswin64c.exe"
           }
+          $runtimeRoot = Split-Path (Split-Path $console.FullName -Parent) -Parent
           "GHOSTSCRIPT_ROOT=$runtimeRoot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Install Inno Setup compiler

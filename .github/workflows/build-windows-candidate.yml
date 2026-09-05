@@ -1,6 +1,17 @@
 name: Build private Windows candidate
 
 on:
+  push:
+    branches:
+      - codex/windows-trash-support
+    paths:
+      - ".github/workflows/build-windows-candidate.yml"
+      - "build_windows.py"
+      - "windows_app.py"
+      - "linux_app.py"
+      - "fs_pdf_compressor/**"
+      - "installer/windows.iss"
+      - "requirements-windows.txt"
   workflow_dispatch:
     inputs:
       version:

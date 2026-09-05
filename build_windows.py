@@ -186,8 +186,12 @@ def main() -> None:
         "--windowed",
         "--name",
         APP_NAME,
+        "--icon",
+        str(ROOT / "assets" / "PDFCompresor.ico"),
         "--add-data",
         f"{ROOT / 'assets' / 'desktop-drop-hole.png'}{os.pathsep}.",
+        "--add-data",
+        f"{ROOT / 'assets' / 'PDFCompresor.png'}{os.pathsep}.",
         "windows_app.py",
     )
     application = ROOT / "dist" / APP_NAME

@@ -10,6 +10,14 @@ import build_windows
 
 
 class WindowsBuildTests(unittest.TestCase):
+    def test_windows_package_uses_the_product_icon_and_drop_zone_assets(self):
+        source = Path(build_windows.__file__).read_text(encoding="utf-8")
+
+        self.assertIn('"--icon",', source)
+        self.assertIn('PDFCompresor.ico', source)
+        self.assertIn('PDFCompresor.png', source)
+        self.assertTrue((Path(build_windows.__file__).parent / "assets" / "PDFCompresor.ico").is_file())
+
     def test_ghostscript_root_prefers_explicit_runtime(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "gs10.07.1"

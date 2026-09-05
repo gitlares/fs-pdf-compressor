@@ -242,6 +242,16 @@ def _ghostscript_command(
     ]
 
 
+def _ghostscript_subprocess_options() -> dict[str, int]:
+    """Keep Ghostscript's Windows console invisible during compression."""
+    if os.name == "nt":
+        # CREATE_NO_WINDOW is the Windows console-free launch flag.  Keeping
+        # its value local avoids a Windows-only subprocess constant on macOS
+        # and Linux.
+        return {"creationflags": 0x08000000}
+    return {}
+
+
 def _original_backup_path(original_path: str) -> str:
     """Choose a visible safety-copy name if moving the original to trash fails."""
     path = Path(original_path)
@@ -297,6 +307,7 @@ def compress_pdf(original_path: str, pdf_settings: str, keep_original: bool):
                 env=gs_environment,
                 stdout=subprocess.DEVNULL,
                 stderr=error_output,
+                **_ghostscript_subprocess_options(),
             )
             if result.returncode != 0 or not os.path.exists(temp_path):
                 if os.path.exists(temp_path):

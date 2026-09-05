@@ -10,6 +10,7 @@ from unittest import mock
 from fs_pdf_compressor.core import (
     _error_output_tail,
     _ghostscript_command,
+    _ghostscript_subprocess_options,
     _original_backup_path,
     compress_pdf,
     compressed_copy_path,
@@ -246,6 +247,13 @@ class ProcessOutputTests(unittest.TestCase):
 
 
 class GhostscriptCommandTests(unittest.TestCase):
+    def test_windows_ghostscript_runs_without_a_console_window(self):
+        with mock.patch("fs_pdf_compressor.core.os.name", "nt"):
+            self.assertEqual(
+                _ghostscript_subprocess_options(),
+                {"creationflags": 0x08000000},
+            )
+
     def test_pdfwrite_preserves_optional_content_and_screen_appearance(self):
         command = _ghostscript_command("gs", "output.pdf", "input.pdf", "/ebook")
 

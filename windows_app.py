@@ -38,13 +38,6 @@ class WindowsPDFCompressorWindow(PDFCompressorWindow):
         super().__init__()
         self.setWindowIcon(QtGui.QIcon(str(_app_icon_path())))
 
-    def closeEvent(self, event):
-        """Exit cleanly instead of leaving an orphaned desktop drop target."""
-        self.drop_zone.hide()
-        event.accept()
-        QtWidgets.QApplication.quit()
-
-
 class WindowsInstanceServer:
     """Bring the existing window forward when a shortcut is launched again."""
 
@@ -79,7 +72,7 @@ def main() -> int:
     application = QtWidgets.QApplication(sys.argv)
     application.setApplicationName(APP_NAME)
     application.setApplicationVersion(APP_VERSION)
-    application.setQuitOnLastWindowClosed(True)
+    application.setQuitOnLastWindowClosed(False)
 
     if WindowsInstanceServer.notify_existing_instance():
         return 0

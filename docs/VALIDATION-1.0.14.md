@@ -1,51 +1,64 @@
-# 1.0.14 local validation — not released
+# 1.0.14 release validation
 
-Date: 2026-09-07. Working branch: `codex/1.0.14-platform-alignment`.
-No release, store upload, remote push, or main merge was performed.
+Date: 2026-09-07. Application source: `35d048bada24e75aa632b69adeecefc5864771f0` (`v1.0.14`).
+The maintainer authorized publication after confirming both Windows and the final macOS candidate.
 
-## Required behavior
+## Behavior
 
-- **Keep original enabled:** preserve the original and create a uniquely named compressed copy.
-- **Keep original disabled:** try moving the original to the operating system's trash, then replace with a smaller validated output.
-- If recycling fails, still replace, as requested. Trash is best-effort protection and the old original may not be recoverable. Do not introduce an adjacent backup mode. If installing the compressed output fails, preserve/restore the original.
-- Recovery snapshots are internal temporary files, not a new user setting.
+- Keep original enabled: preserve the original and create a uniquely named compressed copy.
+- Keep original disabled: try recycling the old original, then replace with a smaller validated output.
+- Recycling is best-effort protection. If it fails, replacement still proceeds and the old original may not be recoverable.
+- Failed output installation preserves/restores the original when possible. Temporary recovery snapshots are internal, not a third output mode. Crash-atomic behavior across every operating-system operation is not claimed.
 
-## Completed checks
+## macOS
 
-- Local macOS unittest discovery after the Snap packaging regression tests: 57 tests, 52 passed, 5 Qt-only tests skipped.
-- Magnolia Linux unittest discovery: 57 tests, 52 passed, 5 macOS-only tests skipped; complementary Qt coverage passed.
-- Real Ghostscript: all three profiles, with both existing output modes, on local macOS and Magnolia. Generated PDFs only. Recycled originals were checked byte-for-byte.
-- Source UI smoke tests: asynchronous AppKit processing on macOS and Qt folder discovery/batch processing on Magnolia; Qt event-loop responsiveness and thread cleanup checked.
-- Local ad-hoc macOS application assembled and signature verification passed. This is not a notarized release candidate.
-- AppImage rebuilt on Magnolia after the best-effort trash change; SHA-256 verification passed. The actual AppImage was launched under Xvfb/X11 in default Balanced/replace mode. Both native trash recovery and replacement with a deliberately unavailable portal passed: generated input 64,892 bytes, output 2,373 bytes. Original bytes were verified in the trash for the successful recycling case; the failure case produced the compressed file without a recycled original. Output rendering through Ghostscript passed, the app remained alive, and owned temporary files were cleaned up. This is not a manual GNOME/KDE desktop review or older-distribution compatibility certification.
-- Windows recycling policy tests use mocked COM callbacks. They do not replace a real Windows test.
+- CI run `34161200184` assembled the compatibility candidate.
+- Developer ID signing and strict signature verification passed.
+- All 108 bundled Mach-O files passed the macOS 14 target audit.
+- Apple submission `c0f2b041-13bf-4235-96b8-54e5539d2893`: Accepted.
+- DMG stapling and validation passed; Gatekeeper: accepted, Notarized Developer ID.
+- Core tests using the final bundled Ghostscript passed all three profiles and both modes, with recovered original bytes verified.
+- UI automation could not complete the native selector; the maintainer subsequently tested the final package and explicitly confirmed all requested behavior.
+- Final artifacts: `release-1.0.14-final/FS-PDF-Compressor-1.0.14-arm64.dmg` and matching update ZIP.
 
-Reproduce the automated checks from the repository with an appropriate platform environment:
+## Windows
+
+- CI run `34151829834`: 57 tests, 51 passed, 6 platform-specific skips.
+- Real Ghostscript: all three profiles and both modes passed; Recycle Bin recovery confirmed.
+- Installer and portable ZIP SHA-256 checks passed; bundled source manifest identifies the release source.
+- Maintainer installed and confirmed operation in the Windows UTM VM.
+- The installer remains unsigned by design; this release does not add automatic Windows updates.
+
+## Linux AppImage
+
+- CI run `34161212444` built the final AppImage on Ubuntu 22.04.
+- SHA-256 verified. The exact CI AppImage launched under Xvfb/X11 on Magnolia and compressed a generated PDF from 64,892 to 2,371 bytes.
+- Both successful trash recovery and replacement with an unavailable portal passed; output rendered through Ghostscript and no owned temporary files remained.
+- Source Qt folder processing, all three profiles and both modes passed on Magnolia.
+- Linux regression suite: 57 tests, 52 passed, 5 macOS-only skips.
+
+## Snap
+
+- Isolated build required an explicit directory change inside the LXD container; see `snap/README.md`.
+- Initial confined test exposed missing `gs_init.ps`; resource/font/ICC layouts fixed it. Missing Wayland runtime libraries were added.
+- The corrected package built successfully and was installed with strict confinement as local revision x2.
+- Installed Snap modules passed all three profiles, both modes, and asynchronous Qt folder processing.
+- Actual packaged X11 launch and compression passed with the ordinary session bus and with a deliberately unavailable application portal.
+- Artifact on Magnolia: `/home/dlares/fs-pdf-1.0.14-test.LGizra/fs-pdf-compressor_1.0.14_amd64.snap`.
+- SHA-256: `d8f3e033096bfabfac995cd40987e4cbe8840693a821de157e95a6d7f23e9978`.
+- The original Store revision 5 was restored after local testing; the build container was stopped and its project mount detached.
+
+## Limits and follow-up
+
+Magnolia's host Trash portal failed/timed out inside Snap. Replacement fallback passed, but successful Snap-to-host trash recovery was not established. Manual Wayland and removable-media coverage are not claimed. Nonfatal packaging lint warnings remain for unused Qt modules/plugins and GPU packaging. Basic output validation is not a visual-fidelity guarantee for arbitrary PDFs. Generated PDFs only were used by automated tests.
+
+## Reproduce
 
 ```sh
 python -B -m unittest discover -s tests
 python -B -m scripts.verify_platform_safety
-# Linux with PySide6:
 python -B -m scripts.verify_platform_safety --qt
-# Linux packaged application, isolated X11 display:
 xvfb-run -a python -B -m scripts.verify_linux_appimage release-linux/FS-PDF-Compressor-x86_64.AppImage
 ```
 
-The opt-in smoke script creates its own PDFs. Originals from successful replacement tests remain in the system trash, identified by `fs-pdf-test-` names.
-
-## Release gates still open
-
-1. **Snap — local functional tests passed:** resolved the isolated build working-directory failure by explicitly changing directory inside the container (see `snap/README.md`). The first installed candidate exposed a real Ghostscript failure: `Can't find initialization file gs_init.ps`. Added confined layouts for Ghostscript resources, fonts, and ICC data, plus missing Wayland libraries. Rebuilt successfully and installed locally as revision `x2`, `confinement: strict`. The installed `/snap/fs-pdf-compressor/x2/opt/fs-pdf-compressor/fs_pdf_compressor/core.py` passed all three profiles and both modes, with asynchronous Qt folder processing. Actual application launch under Xvfb/X11 and output rendering passed with both the regular session bus and a deliberately unavailable application portal (64,892 -> 2,373 bytes). Magnolia's host-trash portal still fails/times out; fallback replacement passed but trash recovery was not established. Manual Wayland/removable-media testing remains outside this check. Nonfatal lint warnings remain for unused Qt plugins/libraries and GPU packaging. No Store upload or publication occurred.
-2. **Windows:** build the updated installer with pywin32, inspect bundled license material, and exercise installation, recycling, recovery, context menu, drop zone, and single-instance behavior in the UTM VM. The VM was stopped; no runtime approval is claimed.
-3. **macOS compatibility:** the locally bundled Homebrew Python/libraries include deployment targets newer than macOS 14. The macOS 14 Mach-O audit failed. Do not distribute this local build or claim macOS 14 compatibility; rebuild in the supported release environment, audit every Mach-O, then sign/notarize/staple and run Gatekeeper checks.
-4. **Packaged desktop tests:** exercise the final rebuilt application artifacts, not only source entry points, on each supported desktop. Verify all profiles and both output modes on representative documents before publication.
-5. **Trash failure review:** include delayed portal replies/disconnection, cross-volume files, unavailable recycle bins, disk-full conditions, and forced process termination in the remaining safety review. Current automated rollback tests do not prove crash-atomic behavior across every OS operation.
-
-Public release links and announcements must remain unchanged until these gates are resolved and publication is authorized.
-
-## Snap artifact and cleanup
-
-- Tested artifact on Magnolia: `/home/dlares/fs-pdf-1.0.14-test.LGizra/fs-pdf-compressor_1.0.14_amd64.snap`.
-- SHA-256: `d8f3e033096bfabfac995cd40987e4cbe8840693a821de157e95a6d7f23e9978`.
-- After testing, restored the Store's exact original 1.0.13 revision 5 using `snap refresh --amend --revision=5`; tracking remains `latest/candidate` (the Store reports that channel closed and forwards to stable).
-- Stopped the isolated build container and detached its project mount. Build caches and the tested artifact remain available; no user PDFs were modified.
+Use `scripts/verify_snap_confined.sh` through `snap run --shell` to exercise the installed Snap modules, and `scripts/verify_linux_appimage.py --snap` for packaged launch tests. Generated originals successfully recycled during smoke tests remain in system trash.

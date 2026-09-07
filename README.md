@@ -87,7 +87,7 @@ no document is uploaded.
 
 - **macOS 14+ on Apple Silicon:** [download the signed and notarized DMG](https://github.com/gitlares/fs-pdf-compressor/releases/latest).
 - **Linux x86_64:** [download the self-contained AppImage](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-x86_64.AppImage).
-- **Windows 11 x64:** [download the per-user installer](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-1.0.13-windows-x86_64-setup.exe) or the [portable ZIP](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-1.0.13-windows-x86_64.zip).
+- **Windows 11 x64:** [download the per-user installer](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-1.0.14-windows-x86_64-setup.exe) or the [portable ZIP](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-1.0.14-windows-x86_64.zip).
 
 The macOS build is Developer ID signed and Apple-notarized, so it opens
 normally with Gatekeeper enabled. The Linux AppImage is portable and bundles
@@ -138,7 +138,7 @@ check; see [Linux instructions](docs/LINUX.md).
 The Windows edition uses the shared Qt interface and can be built from source
 as an x86_64 per-user installer. See the [Windows build and test
 instructions](docs/WINDOWS.md). The public installer and its portable ZIP are
-available from the [1.0.13 release](https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.13).
+available from the [1.0.14 release](https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.14).
 
 ## Code structure
 

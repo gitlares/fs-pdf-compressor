@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.14 — Unreleased
+## 1.0.14 — 2026-09-07
 
 - Align macOS, Windows, AppImage, and Snap on one embedded version and the
   same original-file rules. Keep original still creates a separate compressed

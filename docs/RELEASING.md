@@ -95,14 +95,14 @@ checksum file.
 
 ### Linux Snap Store releases
 
-Snap packaging lives on the dedicated `snap-packaging` branch so its confined
-runtime adjustments do not change the AppImage build on `main`. Update that
-branch with the release's shared application changes, set the matching version
-in `snapcraft.yaml`, and build on Ubuntu with Snapcraft:
+Starting with 1.0.14, Snap packaging lives alongside the shared application
+source on `main`. Build from the release source, with the matching embedded
+version and `snapcraft.yaml` version. See `snap/README.md` for the isolated
+Magnolia build workaround and confined smoke tests. Build on Ubuntu with Snapcraft:
 
 ```sh
 snapcraft pack
-sudo snap install --dangerous ./fs-pdf-compressor_1.0.12_amd64.snap
+sudo snap install --dangerous ./fs-pdf-compressor_1.0.14_amd64.snap
 ```
 
 Test file selection, drag and drop, all three compression profiles and the
@@ -111,7 +111,7 @@ that store revision on a separate Linux system, and then promote the verified
 revision to `stable`:
 
 ```sh
-snapcraft upload ./fs-pdf-compressor_1.0.12_amd64.snap --release candidate
+snapcraft upload ./fs-pdf-compressor_1.0.14_amd64.snap --release candidate
 snapcraft status fs-pdf-compressor
 snapcraft release fs-pdf-compressor REVISION stable
 ```

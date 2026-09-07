@@ -7,7 +7,7 @@ the macOS and Linux editions. It is distributed under AGPL-3.0-or-later.
 ## Install the public build
 
 For Windows 11 x64, download the per-user installer or portable ZIP from the
-[1.0.13 release](https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.13).
+[1.0.14 release](https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.14).
 Each artifact has a matching SHA-256 file. The installer includes the
 unmodified AGPL Ghostscript runtime and needs no administrator rights.
 
@@ -82,8 +82,9 @@ Install the setup executable on a clean Windows VM and check:
 4. Closing the main window leaves the desktop drop zone available; double-click
    it to reopen the window.
 5. With **Keep original** off, the compressed file retains the original name
-   and the previous PDF is in the Windows Recycle Bin. Restore it once to
-   confirm it is recoverable.
+   and the app tries to move the previous PDF to the Windows Recycle Bin.
+   Restore it once to confirm it is recoverable. If recycling is unavailable,
+   the app still replaces the PDF and the old original may not be recoverable.
 6. With **Keep original** on, the original remains beside
    `name compressed.pdf`.
 

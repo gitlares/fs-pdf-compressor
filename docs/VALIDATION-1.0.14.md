@@ -48,7 +48,14 @@ The maintainer authorized publication after confirming both Windows and the fina
 - SHA-256: `d8f3e033096bfabfac995cd40987e4cbe8840693a821de157e95a6d7f23e9978`.
 - The original Store revision 5 was restored after local testing; the build container was stopped and its project mount detached.
 
-## Limits and follow-up
+## Publication verification — 2026-09-07
+
+- GitHub `v1.0.14` is public and Latest with nine uploaded assets.
+- GitHub Pages deployed successfully; the live website and signed Sparkle feed point to 1.0.14. Sparkle archive signature verification passed.
+- Store candidate revision 6 was installed on Magnolia. Installed-package tests passed all three profiles and both output modes; packaged X11 compression and Ghostscript rendering passed with ordinary and unavailable-portal sessions.
+- Revision 6 was promoted to stable; Store status confirms 1.0.14 on stable and candidate.
+
+## Remaining validation limits
 
 Magnolia's host Trash portal failed/timed out inside Snap. Replacement fallback passed, but successful Snap-to-host trash recovery was not established. Manual Wayland and removable-media coverage are not claimed. Nonfatal packaging lint warnings remain for unused Qt modules/plugins and GPU packaging. Basic output validation is not a visual-fidelity guarantee for arbitrary PDFs. Generated PDFs only were used by automated tests.
 

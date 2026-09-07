@@ -52,7 +52,14 @@ PyInstaller is GPL-2.0-or-later with its bootloader exception. The exact
 runtime versions and their license texts are included in the release AppImage.
 The application and bundled Ghostscript remain available under AGPL-3.0-or-later.
 
-## Homebrew libraries
+## Windows desktop runtime
+
+Windows uses PySide6 and the unmodified official AGPL Ghostscript distribution.
+The pywin32 package provides access to the Windows Shell recycle operation;
+its license text is copied from the installed distribution into the package's
+`licenses/` directory. Corresponding source: https://github.com/mhammond/pywin32
+
+## Homebrew runtime dependencies
 
 Ghostscript dynamically depends on additional open-source libraries distributed
 by Homebrew. License files detected from the installed formulae at build time are

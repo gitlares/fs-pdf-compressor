@@ -47,7 +47,7 @@ class WindowsBuildTests(unittest.TestCase):
             source_license.write_text("AGPL")
             source_notices.write_text("notices")
 
-            with patch.object(build_windows, "ROOT", root):
+            with patch.object(build_windows, "ROOT", root), patch.object(build_windows, "bundle_windows_runtime_license"):
                 with patch("build_windows.package_version", side_effect=lambda name: f"{name}-version"):
                     build_windows.bundle_compliance_documents(root / "resources", "10.07.1")
 

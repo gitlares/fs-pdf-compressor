@@ -22,10 +22,10 @@ from fs_pdf_compressor.core import (
 from fs_pdf_compressor.linux_drop_zone import DropZoneWindow
 from fs_pdf_compressor.linux_update import replace_after_exit
 from fs_pdf_compressor.linux_views import DropSurface, ResultsTable
-from fs_pdf_compressor.linux_workers import CompressionWorker, UpdateWorker
+from fs_pdf_compressor.linux_workers import CompressionWorker, UpdateWorker, DiscoveryWorker
 
 
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.12")
+from fs_pdf_compressor.version import APP_VERSION
 FOOTER_HEIGHT = 52
 
 
@@ -39,8 +39,13 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         self.processing = False
         self.thread = None
         self.worker = None
+        self.discovery_thread = None
+        self.discovery_worker = None
+        self._discovered_paths = []
+        self._discovery_error = None
         self.update_thread = None
         self.pending_update = None
+        self.pending_replacement = None
         self._batch_from_drop_zone = False
         self.settings = QtCore.QSettings("gitlares", APP_NAME)
         self.setWindowTitle(APP_NAME)
@@ -164,7 +169,7 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         about_action.triggered.connect(self.show_about)
         application_menu.addSeparator()
         quit_action = application_menu.addAction(f"Quit {APP_NAME}")
-        quit_action.triggered.connect(QtWidgets.QApplication.quit)
+        quit_action.triggered.connect(self.request_quit)
 
     def _build_drop_zone(self):
         self.drop_zone = DropZoneWindow()
@@ -206,17 +211,53 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         if self.processing:
             self.status_label.setText("Wait for the current batch to finish")
             return False
-        pdfs = expand_pdf_paths(paths)
-        if not pdfs:
-            self.status_label.setText("Choose PDF files")
+        if not paths:
             return False
+        self.processing = True
         self._batch_from_drop_zone = from_drop_zone
+        self._discovered_paths = []
+        self._discovery_error = None
+        self.status_label.setText("Finding PDFs…")
+        for control in (self.add_button, self.keep_original, self.again_button, self.quality_menu_button):
+            control.setEnabled(False)
+        self.discovery_thread = QtCore.QThread(self)
+        self.discovery_worker = DiscoveryWorker(list(paths))
+        self.discovery_worker.moveToThread(self.discovery_thread)
+        self.discovery_thread.started.connect(self.discovery_worker.run)
+        self.discovery_worker.discovered.connect(self._paths_discovered)
+        self.discovery_worker.failed.connect(self._discovery_failed)
+        self.discovery_worker.finished.connect(self.discovery_thread.quit)
+        self.discovery_worker.finished.connect(self.discovery_worker.deleteLater)
+        self.discovery_thread.finished.connect(self.discovery_thread.deleteLater)
+        self.discovery_thread.finished.connect(self._discovery_finished)
+        self.discovery_thread.start()
+        return True
+
+    def _paths_discovered(self, paths):
+        self._discovered_paths = paths
+
+    def _discovery_failed(self, detail):
+        self._discovery_error = detail
+
+    def _discovery_finished(self):
+        self.discovery_thread = self.discovery_worker = None
+        pdfs, self._discovered_paths = self._discovered_paths, []
+        if not pdfs:
+            self.processing = False
+            self.status_label.setText("Could not read folder" if self._discovery_error else "Choose PDF files")
+            for control in (self.add_button, self.keep_original, self.quality_menu_button):
+                control.setEnabled(True)
+            self.again_button.setEnabled(bool(self.pdf_files))
+            if self._batch_from_drop_zone:
+                self.drop_zone.set_result("PDF only")
+            self._batch_from_drop_zone = False
+            self._restart_when_idle()
+            return
         self.pdf_files = pdfs
         self.statuses = [Path(path).name for path in pdfs]
         self.metrics = [None] * len(pdfs)
         self.show_results()
         self.start_compression()
-        return True
 
     def start_drop_zone_paths(self, paths):
         was_processing = self.processing
@@ -269,6 +310,8 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
     def _compression_thread_finished(self):
         self.worker = None
         self.thread = None
+        self.processing = False
+        self._restart_when_idle()
 
     def update_result(self, index, status, metric):
         self.statuses[index] = status
@@ -277,6 +320,7 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         detail = f"↓ {reduction}" if marker else status.partition(" — ")[2] or "Waiting"
         file_item = QtWidgets.QTableWidgetItem(filename)
         detail_item = QtWidgets.QTableWidgetItem(detail)
+        detail_item.setToolTip(detail)
         detail_item.setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         if marker:
             detail_item.setForeground(QtGui.QColor("#26bf5b"))
@@ -287,7 +331,6 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
             self.drop_zone.set_progress(index + 1, len(self.pdf_files))
 
     def finish_compression(self):
-        self.processing = False
         summary = BatchSummary.from_metrics(self.metrics)
         self.status_label.setText(completion_text(self.metrics))
         self.add_button.setEnabled(True)
@@ -318,6 +361,12 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
         )
 
     def check_for_updates(self):
+        if sys.platform == "win32":
+            QtGui.QDesktopServices.openUrl(QtCore.QUrl("https://github.com/gitlares/fs-pdf-compressor/releases/latest"))
+            return
+        if os.environ.get("SNAP"):
+            QtWidgets.QMessageBox.information(self, "Check for Updates", "This installation is managed and updated by Snap Store.")
+            return
         appimage = os.environ.get("APPIMAGE")
         if not appimage:
             QtWidgets.QMessageBox.information(
@@ -352,10 +401,12 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
 
     def _update_thread_finished(self):
         self.update_thread = None
+        self.update_worker = None
         if self.pending_update is not None:
             release = self.pending_update
             self.pending_update = None
             self._run_update_task("download", release, Path(os.environ["APPIMAGE"]))
+        self._restart_when_idle()
 
     def _update_check_finished(self, release):
         if release is None:
@@ -382,14 +433,27 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
             self.status_label.setText("Downloading update…")
 
     def _update_download_finished(self, replacement):
+        self.pending_replacement = Path(replacement)
+        self.status_label.setText("Update ready — waiting for current work to finish")
+
+    def _restart_when_idle(self):
+        if self.pending_replacement is None or self.processing or self.thread is not None or self.update_thread is not None:
+            return
         current = Path(os.environ["APPIMAGE"])
-        replace_after_exit(current, Path(replacement))
+        replace_after_exit(current, self.pending_replacement)
         QtWidgets.QMessageBox.information(
             self,
             "Update ready",
             "The verified update is ready. FS PDF Compressor will restart now.",
         )
         QtWidgets.QApplication.quit()
+
+    def request_quit(self):
+        if self.processing or self.thread is not None or self.update_thread is not None:
+            QtWidgets.QMessageBox.information(self, APP_NAME, "Please wait for the current operation to finish before quitting.")
+            return False
+        QtWidgets.QApplication.quit()
+        return True
 
     def _update_failed(self, detail):
         self.status_label.setText("Could not check for updates")
@@ -400,8 +464,10 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
             self.hide()
             event.ignore()
             return
-        event.accept()
-        QtWidgets.QApplication.quit()
+        if self.request_quit():
+            event.accept()
+        else:
+            event.ignore()
 
 
 def main():

@@ -8,6 +8,24 @@ from pathlib import Path
 
 @unittest.skipUnless(sys.platform == "darwin", "macOS AppKit test")
 class FinderQuickActionTests(unittest.TestCase):
+    def test_quit_is_cancelled_while_compressing(self):
+        import native_app
+        from unittest import mock
+
+        delegate = native_app.AppDelegate.alloc().init()
+        delegate.controller = mock.Mock(processing=True)
+        with mock.patch.object(native_app.AK, "NSAlert"):
+            result = delegate.applicationShouldTerminate_(None)
+        self.assertEqual(result, native_app.AK.NSTerminateCancel)
+
+    def test_idle_application_can_quit(self):
+        import native_app
+        from unittest import mock
+
+        delegate = native_app.AppDelegate.alloc().init()
+        delegate.controller = mock.Mock(processing=False)
+        self.assertEqual(delegate.applicationShouldTerminate_(None), native_app.AK.NSTerminateNow)
+
     def test_quick_action_open_urls_starts_only_local_files(self):
         import native_app
 

@@ -34,7 +34,7 @@ ROOT = Path(__file__).resolve().parent
 # Set DIST_DIR for a separate local build directory (for example, release-test).
 DIST = Path(os.environ.get("DIST_DIR", str(ROOT / "release")))
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.12")
+from fs_pdf_compressor.version import APP_VERSION
 APP_DISPLAY_NAME = os.environ.get("MACOS_DISPLAY_NAME", APP_NAME)
 APP_BUNDLE_IDENTIFIER = os.environ.get(
     "MACOS_BUNDLE_IDENTIFIER", "com.daniellares.fspdfcompressor"
@@ -672,6 +672,8 @@ def finalize_application() -> None:
 
 
 def main() -> None:
+    if os.environ.get("APP_VERSION", APP_VERSION) != APP_VERSION:
+        raise RuntimeError("Requested version does not match the checked-out source")
     if os.uname().machine != "arm64":
         raise RuntimeError("Este constructor genera una app Apple Silicon (arm64).")
     if BUILD_STAGE not in {"assemble", "finalize", "release"}:

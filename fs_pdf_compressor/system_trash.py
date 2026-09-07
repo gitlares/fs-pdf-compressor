@@ -5,12 +5,11 @@
 
 from __future__ import annotations
 
-import ctypes
 import os
 import shutil
 import subprocess
 import sys
-import uuid
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
@@ -30,48 +29,19 @@ def move_to_system_trash(path: Path) -> None:
     if not path.is_file():
         raise TrashError(f"Cannot move a missing file to trash: {path}")
     if sys.platform == "win32":
-        _move_to_windows_recycle_bin(path)
+        return _move_to_windows_recycle_bin(path)
     elif sys.platform == "darwin":
-        _move_to_macos_trash(path)
+        return _move_to_macos_trash(path)
     else:
-        _move_to_freedesktop_trash(path)
+        return _move_to_freedesktop_trash(path)
 
 
 def _move_to_windows_recycle_bin(path: Path) -> None:
-    """Use the Windows Shell so the file appears in the Recycle Bin."""
-    from ctypes import wintypes
-
-    class SHFILEOPSTRUCTW(ctypes.Structure):
-        _fields_ = [
-            ("hwnd", wintypes.HWND),
-            ("wFunc", wintypes.UINT),
-            ("pFrom", wintypes.LPCWSTR),
-            ("pTo", wintypes.LPCWSTR),
-            ("fFlags", ctypes.c_ushort),
-            ("fAnyOperationsAborted", wintypes.BOOL),
-            ("hNameMappings", ctypes.c_void_p),
-            ("lpszProgressTitle", wintypes.LPCWSTR),
-        ]
-
-    FO_DELETE = 3
-    FOF_SILENT = 0x0004
-    FOF_NOCONFIRMATION = 0x0010
-    FOF_ALLOWUNDO = 0x0040
-    FOF_NOERRORUI = 0x0400
-    source = str(path.resolve()) + "\0\0"
-    operation = SHFILEOPSTRUCTW(
-        None,
-        FO_DELETE,
-        source,
-        None,
-        FOF_SILENT | FOF_NOCONFIRMATION | FOF_ALLOWUNDO | FOF_NOERRORUI,
-        False,
-        None,
-        None,
-    )
-    result = ctypes.windll.shell32.SHFileOperationW(ctypes.byref(operation))
-    if result != 0 or operation.fAnyOperationsAborted:
-        raise TrashError(f"Windows could not move the original PDF to the Recycle Bin ({result})")
+    try:
+        from fs_pdf_compressor.windows_trash import recycle
+        return recycle(path)
+    except Exception as error:
+        raise TrashError(f"Windows could not recycle the original: {error}") from error
 
 
 def _move_to_macos_trash(path: Path) -> None:
@@ -87,10 +57,15 @@ def _move_to_macos_trash(path: Path) -> None:
     succeeded = result[0] if isinstance(result, tuple) else bool(result)
     if not succeeded:
         raise TrashError("macOS could not move the original PDF to the Trash")
+    if isinstance(result, tuple) and result[1] is not None:
+        return Path(str(result[1].path()))
 
 
 def _move_to_freedesktop_trash(path: Path) -> None:
     """Prefer GIO, then use the standard per-user FreeDesktop trash layout."""
+    if os.environ.get("SNAP"):
+        _move_to_portal_trash(path)
+        return
     gio = shutil.which("gio")
     if gio:
         result = subprocess.run(
@@ -99,6 +74,7 @@ def _move_to_freedesktop_trash(path: Path) -> None:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
             text=True,
+            timeout=30,
         )
         if result.returncode == 0:
             return
@@ -107,19 +83,38 @@ def _move_to_freedesktop_trash(path: Path) -> None:
     trash_root = data_home / "Trash"
     files = trash_root / "files"
     info = trash_root / "info"
-    files.mkdir(parents=True, exist_ok=True)
-    info.mkdir(parents=True, exist_ok=True)
-    destination = files / path.name
-    while destination.exists():
-        destination = files / f"{path.stem} {uuid.uuid4().hex[:8]}{path.suffix}"
+    files.mkdir(parents=True, exist_ok=True, mode=0o700)
+    info.mkdir(parents=True, exist_ok=True, mode=0o700)
+    fd, reserved = tempfile.mkstemp(prefix=f"{path.stem}-", suffix=path.suffix, dir=files)
+    os.close(fd)
+    destination = Path(reserved)
+    trash_info = info / f"{destination.name}.trashinfo"
+    original_location = str(path.resolve())
     try:
-        shutil.move(str(path), str(destination))
-        trash_info = info / f"{destination.name}.trashinfo"
-        trash_info.write_text(
+        with trash_info.open("x", encoding="utf-8") as metadata:
+            metadata.write(
             "[Trash Info]\n"
-            f"Path={quote(str(path.resolve()))}\n"
+            f"Path={quote(original_location)}\n"
             f"DeletionDate={datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S')}\n",
-            encoding="utf-8",
-        )
+            )
+        # Cross-device moves must use GIO; never copy then delete here.
+        os.replace(path, destination)
     except OSError as error:
+        destination.unlink(missing_ok=True)
+        trash_info.unlink(missing_ok=True)
         raise TrashError(f"Linux could not move the original PDF to the Trash: {error}") from error
+
+
+def _move_to_portal_trash(path):
+    """Use the host desktop trash from a confined Snap, not a private trash."""
+    from PySide6 import QtDBus
+
+    with path.open("r+b") as source:
+        message = QtDBus.QDBusMessage.createMethodCall(
+            "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop",
+            "org.freedesktop.portal.Trash", "TrashFile",
+        )
+        message.setArguments([QtDBus.QDBusUnixFileDescriptor(source.fileno())])
+        reply = QtDBus.QDBusConnection.sessionBus().call(message, QtDBus.QDBus.Block, 5000)
+        if reply.type() == QtDBus.QDBusMessage.ErrorMessage or reply.arguments() != [1]:
+            raise TrashError(f"The desktop portal could not recycle the original: {reply.errorMessage()} {reply.arguments()}")

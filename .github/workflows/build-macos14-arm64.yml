@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version to assemble (for example, 1.0.12)
+        description: Version matching the checked-out source
         required: true
-        default: "1.0.12"
+        default: "1.0.14"
 
 permissions:
   contents: read

@@ -9,11 +9,30 @@ from pathlib import Path
 
 from PySide6 import QtCore
 
-from fs_pdf_compressor.core import compress_pdf, compression_logger
+from fs_pdf_compressor.core import compress_pdf, compression_logger, expand_pdf_paths
 from fs_pdf_compressor.linux_update import (
     available_release,
     download_verified_appimage,
 )
+
+
+class DiscoveryWorker(QtCore.QObject):
+    discovered = QtCore.Signal(list)
+    failed = QtCore.Signal(str)
+    finished = QtCore.Signal()
+
+    def __init__(self, paths):
+        super().__init__()
+        self.paths = paths
+
+    @QtCore.Slot()
+    def run(self):
+        try:
+            self.discovered.emit(expand_pdf_paths(self.paths))
+        except Exception as error:
+            self.failed.emit(str(error))
+        finally:
+            self.finished.emit()
 
 
 class CompressionWorker(QtCore.QObject):

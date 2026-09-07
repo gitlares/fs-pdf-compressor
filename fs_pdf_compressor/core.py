@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import logging
+from logging.handlers import RotatingFileHandler
 import os
 import shutil
 import subprocess
@@ -14,6 +15,7 @@ import tempfile
 from pathlib import Path
 
 from fs_pdf_compressor.system_trash import TrashError, move_to_system_trash
+from fs_pdf_compressor.file_guard import FileBusyError, document_lock
 
 
 APP_NAME = "FS PDF Compressor"
@@ -40,6 +42,8 @@ QUALITY_CONTROL_LABELS = ("Preserve", "Balanced", "Maximum")
 def _log_path() -> Path:
     if sys.platform == "darwin":
         return Path.home() / "Library" / "Logs" / APP_NAME / "compression.log"
+    if sys.platform == "win32":
+        return Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / APP_NAME / "compression.log"
     state_home = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
     return state_home / "fs-pdf-compressor" / "compression.log"
 
@@ -52,7 +56,7 @@ def compression_logger() -> logging.Logger:
     try:
         log_path = _log_path()
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        handler = logging.FileHandler(log_path, encoding="utf-8")
+        handler = RotatingFileHandler(log_path, maxBytes=1_000_000, backupCount=2, encoding="utf-8")
         handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)
@@ -203,8 +207,10 @@ def expand_pdf_paths(paths: list[str]) -> list[str]:
             continue
         for candidate in candidates:
             if candidate not in seen:
-                seen.add(candidate)
-                pdfs.append(candidate)
+                canonical = str(Path(candidate).resolve())
+                if canonical not in seen:
+                    seen.add(canonical)
+                    pdfs.append(candidate)
     return pdfs
 
 
@@ -252,50 +258,86 @@ def _ghostscript_subprocess_options() -> dict[str, int]:
     return {}
 
 
-def _original_backup_path(original_path: str) -> str:
-    """Choose a visible safety-copy name if moving the original to trash fails."""
-    path = Path(original_path)
-    candidate = path.with_name(f"{path.stem} original{path.suffix}")
-    sequence = 2
-    while candidate.exists():
-        candidate = path.with_name(f"{path.stem} original {sequence}{path.suffix}")
-        sequence += 1
-    return str(candidate)
-
-
 def _replace_and_trash_original(temp_path: str, original_path: str) -> bool:
-    """Install the compressed PDF, retaining the replaced original in system trash.
+    """Try recycling before replacement; restore if installing output fails.
 
-    The old file first becomes a visible adjacent backup.  This lets us restore
-    it if replacing the original path fails, and prevents a failed trash call
-    from becoming data loss.
+    The temporary recovery snapshot is not a third output mode. It protects
+    against a trash implementation that moves a file and then reports failure.
     """
-    backup_path = _original_backup_path(original_path)
-    os.replace(original_path, backup_path)
+    fd, backup_path = tempfile.mkstemp(prefix=".fs-pdf-recovery-", suffix=".tmp", dir=Path(original_path).parent)
     try:
-        os.replace(temp_path, original_path)
-    except Exception:
-        os.replace(backup_path, original_path)
-        raise
-    try:
-        move_to_system_trash(Path(backup_path))
-    except TrashError:
-        return False
-    return True
+        before = os.stat(original_path)
+        with os.fdopen(fd, "wb") as backup, open(original_path, "rb") as source:
+            shutil.copyfileobj(source, backup, length=1024 * 1024)
+            backup.flush()
+            os.fsync(backup.fileno())
+        shutil.copystat(original_path, backup_path)
+        after = os.stat(original_path)
+        if (before.st_ino, before.st_size, before.st_mtime_ns) != (after.st_ino, after.st_size, after.st_mtime_ns):
+            raise OSError("Original PDF changed while preparing replacement")
+        try:
+            move_to_system_trash(Path(original_path))
+            if os.path.exists(original_path):
+                raise TrashError("The original was not moved to the system trash")
+        except Exception as error:
+            # Recycling is best-effort protection, not a prerequisite for the
+            # user's selected replace mode. Keep the recovery snapshot until
+            # installation succeeds, including when the trash backend moved
+            # the original before reporting an error.
+            compression_logger().warning(
+                "Could not recycle %s; replacing without confirmed trash recovery: %s",
+                original_path, error,
+            )
+        try:
+            os.replace(temp_path, original_path)
+        except Exception:
+            if not os.path.exists(original_path):
+                os.replace(backup_path, original_path)
+            raise
+        return True
+    finally:
+        # If restoration itself failed, retain the recovery file for recovery.
+        if os.path.exists(original_path):
+            Path(backup_path).unlink(missing_ok=True)
 
 
 def compress_pdf(original_path: str, pdf_settings: str, keep_original: bool):
     """Compress one PDF, preserving the original if no smaller result exists."""
+    original_path = str(Path(original_path).resolve())
+    try:
+        with document_lock(original_path):
+            return _compress_locked(original_path, pdf_settings, keep_original)
+    except FileBusyError:
+        return f"{Path(original_path).name} — already being compressed", None
+    except OSError:
+        return f"{Path(original_path).name} — could not open PDF", None
+
+
+def _valid_pdf_output(path):
+    """Reject empty/truncated output; this is not a visual fidelity check."""
+    with open(path, "rb") as output:
+        if not output.read(8).startswith(b"%PDF-"):
+            return False
+        output.seek(0, os.SEEK_END)
+        size = output.tell()
+        output.seek(max(0, size - 1024))
+        return b"%%EOF" in output.read()
+
+
+def _compress_locked(original_path, pdf_settings, keep_original):
     filename = os.path.basename(original_path)
     logger = compression_logger()
-    temp_path = original_path + ".temp.pdf"
+    temp_path = None
     try:
         gs_path, gs_environment = get_ghostscript_config()
         if not gs_path:
             logger.error("Ghostscript was unavailable while compressing %s", filename)
             return f"{filename} — Ghostscript unavailable", None
 
-        original_size = os.path.getsize(original_path)
+        original_stat = os.stat(original_path)
+        original_size = original_stat.st_size
+        fd, temp_path = tempfile.mkstemp(prefix=".fs-pdf-", suffix=".tmp", dir=Path(original_path).parent)
+        os.close(fd)
         with tempfile.SpooledTemporaryFile(max_size=64 * 1024, mode="w+b") as error_output:
             result = subprocess.run(
                 _ghostscript_command(
@@ -322,28 +364,42 @@ def compress_pdf(original_path: str, pdf_settings: str, keep_original: bool):
                 return f"{filename} — compression failed", None
 
         new_size = os.path.getsize(temp_path)
+        if not _valid_pdf_output(temp_path):
+            raise ValueError("Ghostscript produced an invalid or truncated PDF")
         if new_size >= original_size:
             os.unlink(temp_path)
             return f"{filename} — no size reduction", None
 
+        current_stat = os.stat(original_path)
+        if (original_stat.st_ino, original_stat.st_size, original_stat.st_mtime_ns) != (current_stat.st_ino, current_stat.st_size, current_stat.st_mtime_ns):
+            raise OSError("Original PDF changed during compression")
+        shutil.copystat(original_path, temp_path)
         if keep_original:
             output_path = compressed_copy_path(original_path)
-            os.replace(temp_path, output_path)
-            original_trashed = True
+            output = open(output_path, "xb")
+            try:
+                with output, open(temp_path, "rb") as source:
+                    shutil.copyfileobj(source, output, length=1024 * 1024)
+            except Exception:
+                Path(output_path).unlink(missing_ok=True)
+                raise
+            shutil.copystat(original_path, output_path)
+            os.unlink(temp_path)
         else:
             output_path = original_path
-            original_trashed = _replace_and_trash_original(temp_path, original_path)
+            _replace_and_trash_original(temp_path, original_path)
         reduction = 100 - (new_size / original_size * 100)
-        original_note = "" if original_trashed else " (original retained)"
         return (
-            f"{os.path.basename(output_path)}   ↓ {reduction:.1f}%{original_note}",
+            f"{os.path.basename(output_path)}   ↓ {reduction:.1f}%",
             {"original_size": original_size, "saved_size": original_size - new_size},
         )
-    except Exception:
-        if os.path.exists(temp_path):
+    except Exception as error:
+        if temp_path and os.path.exists(temp_path):
             try:
                 os.unlink(temp_path)
             except OSError:
                 pass
         logger.exception("Unexpected compression failure for %s", filename)
+        if isinstance(error, TrashError):
+            return f"{filename} — could not recycle original; not replaced", None
         return f"{filename} — compression failed", None

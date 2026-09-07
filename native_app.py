@@ -30,7 +30,7 @@ from fs_pdf_compressor.macos_views import DropCanvas, ResultsTableView
 
 
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.12")
+from fs_pdf_compressor.version import APP_VERSION
 REPOSITORY_URL = "https://github.com/gitlares/fs-pdf-compressor"
 CONTRIBUTE_URL = f"{REPOSITORY_URL}/blob/main/CONTRIBUTING.md"
 DONATE_URL = "https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ"
@@ -253,18 +253,41 @@ class PDFCompressorController(FN.NSObject):
         if self.processing:
             self.status_label.setStringValue_("Wait for the current batch to finish")
             return False
-        pdfs = self._expand_pdf_paths(paths)
-        if not pdfs:
-            self.status_label.setStringValue_("Choose PDF files")
+        if not paths:
             return False
-
+        self.processing = True
         self._batch_from_drop_zone = from_drop_zone
+        self.status_label.setStringValue_("Finding PDFs…")
+        for control in (self.add_button, self.keep_original, self.again_button, self.options_button):
+            control.setEnabled_(False)
+        threading.Thread(target=self._discover_paths, args=(list(paths),), daemon=True).start()
+        return True
+
+    def _discover_paths(self, paths):
+        try:
+            pdfs = self._expand_pdf_paths(paths)
+        except Exception:
+            compression_logger().exception("Could not discover PDFs")
+            AppHelper.callAfter(self._discovery_finished, [], True)
+        else:
+            AppHelper.callAfter(self._discovery_finished, pdfs, False)
+
+    def _discovery_finished(self, pdfs, failed):
+        self.processing = False
+        if not pdfs:
+            self.status_label.setStringValue_("Could not read folder" if failed else "Choose PDF files")
+            for control in (self.add_button, self.keep_original, self.options_button):
+                control.setEnabled_(True)
+            self.again_button.setEnabled_(bool(self.pdf_files))
+            if self._batch_from_drop_zone and self.drop_zone is not None:
+                self.drop_zone.batch_finished(None)
+            self._batch_from_drop_zone = False
+            return
         self.pdf_files = pdfs
         self.statuses = [Path(path).name for path in pdfs]
         self.metrics = [None] * len(pdfs)
         self._show_results()
         self._start_compression()
-        return True
 
     def start_drop_zone_paths(self, paths):
         return self._start_paths(paths, from_drop_zone=True)
@@ -726,6 +749,16 @@ class AppDelegate(FN.NSObject):
         return not FN.NSUserDefaults.standardUserDefaults().boolForKey_(
             DROP_ZONE_DEFAULTS_KEY
         )
+
+    def applicationShouldTerminate_(self, application):
+        if self.controller.processing:
+            alert = AK.NSAlert.alloc().init()
+            alert.setMessageText_("Compression is still running")
+            alert.setInformativeText_("Please wait for the current batch to finish before quitting.")
+            alert.addButtonWithTitle_("Continue compressing")
+            alert.runModal()
+            return AK.NSTerminateCancel
+        return AK.NSTerminateNow
 
 
 def main():

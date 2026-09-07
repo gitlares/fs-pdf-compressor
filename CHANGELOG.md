@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.0.14 — Unreleased
+
+- Align macOS, Windows, AppImage, and Snap on one embedded version and the
+  same original-file rules. Keep original still creates a separate compressed
+  copy. With it off, try sending the original to the system trash before
+  replacement. If recycling fails, still replace with the smaller validated
+  output and log the missing trash protection; no extra copy is created.
+- Use exclusive temporary files and operating-system document locks, reject
+  empty or truncated output, and detect edits made during compression.
+- Keep folder discovery off the UI thread, prevent quitting during active
+  work, and defer AppImage update restarts until processing has finished.
+- Direct Windows update checks to releases and explain Snap Store updates in
+  Snap builds. Cap diagnostic logs and use Windows' local app-data directory.
+- Include Snap packaging with the shared source; use the host Trash portal
+  for confined installations and modern Windows recycling without permanent
+  deletion fallback.
+- Fix confined Snap compression by mapping bundled Ghostscript resources,
+  fonts, and ICC profiles to their required paths; include missing Wayland
+  runtime dependencies.
+
 ## 1.0.13 — 2026-09-04
 
 - Reduced the app's idle memory footprint, especially on macOS, so FS PDF

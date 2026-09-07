@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parent
 DIST = ROOT / os.environ.get("DIST_DIR", "release-linux")
 BUILD = ROOT / ".linux-build"
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.12")
+from fs_pdf_compressor.version import APP_VERSION
 ARCHITECTURE = "x86_64"
 APPDIR = BUILD / "AppDir"
 APPIMAGE_NAME = f"FS-PDF-Compressor-{ARCHITECTURE}.AppImage"
@@ -210,6 +210,8 @@ def bundle_compliance_documents() -> None:
 
 
 def main() -> None:
+    if os.environ.get("APP_VERSION", APP_VERSION) != APP_VERSION:
+        raise RuntimeError("Requested version does not match the checked-out source")
     require_linux_x86_64()
     appimagetool = Path(os.environ.get("APPIMAGETOOL", shutil.which("appimagetool") or ""))
     if not appimagetool.is_file():

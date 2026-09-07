@@ -19,7 +19,7 @@ import re
 import shutil
 import subprocess
 import sys
-from importlib.metadata import version as package_version
+from importlib.metadata import version as package_version, distribution
 from pathlib import Path
 
 
@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parent
 DIST = ROOT / os.environ.get("DIST_DIR", "release-windows")
 BUILD = ROOT / ".windows-build"
 APP_NAME = "FS PDF Compressor"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.13")
+from fs_pdf_compressor.version import APP_VERSION
 ARCHITECTURE = "x86_64"
 PACKAGE_NAME = f"FS-PDF-Compressor-{APP_VERSION}-windows-{ARCHITECTURE}"
 
@@ -139,6 +139,7 @@ def bundle_compliance_documents(resources: Path, ghostscript_version_value: str)
     destination.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ROOT / "LICENSE", destination / "FS-PDF-Compressor-AGPL-3.0.txt")
     shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", destination)
+    bundle_windows_runtime_license(destination)
     source_tag = f"gs{ghostscript_version_value.replace('.', '')}"
     (resources / "SOURCE_OFFER.md").write_text(
         "# Corresponding source\n\n"
@@ -155,9 +156,10 @@ def bundle_compliance_documents(resources: Path, ghostscript_version_value: str)
         json.dumps(
             {
                 "application_version": APP_VERSION,
-                "source_ref": os.environ.get("SOURCE_REF", "codex/windows-trash-support"),
+                "source_ref": os.environ.get("SOURCE_REF", "local working tree"),
                 "python": sys.version.split()[0],
                 "pyside6": package_version("PySide6"),
+                "pywin32": package_version("pywin32"),
                 "pyinstaller": package_version("PyInstaller"),
                 "ghostscript": ghostscript_version_value,
                 "ghostscript_license": "AGPL-3.0-or-later",
@@ -171,7 +173,18 @@ def bundle_compliance_documents(resources: Path, ghostscript_version_value: str)
     )
 
 
+def bundle_windows_runtime_license(destination: Path) -> None:
+    package = distribution("pywin32")
+    licenses = [entry for entry in (package.files or []) if "license" in entry.name.lower() and entry.suffix.lower() in (".txt", ".md", "")]
+    if not licenses:
+        raise RuntimeError("The pywin32 distribution is missing its license text")
+    for index, entry in enumerate(licenses):
+        shutil.copy2(package.locate_file(entry), destination / f"pywin32-{index}-{entry.name}")
+
+
 def main() -> None:
+    if os.environ.get("APP_VERSION", APP_VERSION) != APP_VERSION:
+        raise RuntimeError("Requested version does not match the checked-out source")
     require_windows_x86_64()
     shutil.rmtree(BUILD, ignore_errors=True)
     shutil.rmtree(DIST, ignore_errors=True)

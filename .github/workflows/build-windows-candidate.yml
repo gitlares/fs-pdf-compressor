@@ -13,6 +13,8 @@ on:
       - "fs_pdf_compressor/**"
       - "installer/windows.iss"
       - "requirements-windows.txt"
+      - "tests/**"
+      - "scripts/verify_platform_safety.py"
   workflow_dispatch:
     inputs:
       version:

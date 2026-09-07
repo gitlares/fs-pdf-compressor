@@ -51,7 +51,7 @@ class QtLifecycleTests(unittest.TestCase):
         self.assertEqual(open_url.call_args.args[0].toString(), "https://github.com/gitlares/fs-pdf-compressor/releases/latest")
 
     def test_snap_update_explains_store_updates(self):
-        with mock.patch.dict(os.environ, {"SNAP": "/snap/test"}), mock.patch.object(self.module.QtWidgets.QMessageBox, "information") as message:
+        with mock.patch.object(self.module.sys, "platform", "linux"), mock.patch.dict(os.environ, {"SNAP": "/snap/test"}), mock.patch.object(self.module.QtWidgets.QMessageBox, "information") as message:
             self.window.check_for_updates()
         self.assertIn("Snap Store", message.call_args.args[2])
 

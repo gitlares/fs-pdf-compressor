@@ -55,8 +55,8 @@ $env:GHOSTSCRIPT_ROOT = "D:\tools\gs\gs10.07.1"
 The build writes these files to `release-windows/`:
 
 - `FS-PDF-Compressor-<version>-windows-x86_64-setup.exe` — per-user installer.
-- `FS-PDF-Compressor-<version>-windows-x86_64.zip` — portable build for
-  diagnosis.
+- `FS-PDF-Compressor-<version>-windows-x86_64.zip` — portable build for users
+  who do not want to run the installer and for troubleshooting.
 - A `.sha256` file for each artifact.
 
 The installer requires no administrator rights. Builds are unsigned unless a
@@ -97,8 +97,12 @@ For ordinary public releases, build from the exact Git tag that defines the
 shared version used by macOS, Linux, and Windows. Set `APP_VERSION` and
 `SOURCE_REF` to that version/tag when producing the installer.
 
-The first Windows package is published alongside the existing 1.0.13 release
-without rebuilding the already published macOS, Linux, or Snap packages. Its
-release notes identify the exact public source commit used for the Windows
-build. Future shared releases should build every published platform from the
-same version tag.
+The **Build Windows x64** GitHub Actions workflow is the preferred packaging
+path. Select the release tag when dispatching it and enter the identical
+version. Download the resulting installer, portable ZIP, and SHA-256 files,
+then complete [Windows release testing](WINDOWS_TESTING.md) before attaching
+them to the matching GitHub Release.
+
+Version 1.0.13 introduced the first Windows package. Current shared releases
+must build every published platform from the same version tag and identify the
+exact public source commit in their release notes.

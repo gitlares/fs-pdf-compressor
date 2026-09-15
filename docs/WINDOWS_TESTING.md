@@ -1,4 +1,4 @@
-# Windows candidate testing
+# Windows release testing
 
 This checklist is for a candidate produced before a shared public release. For
 the reproducible open-source build instructions, see [Windows builds](WINDOWS.md).
@@ -22,18 +22,18 @@ py -3.12 -m venv .windows-build-venv
 .windows-build-venv\Scripts\python build_windows.py
 ```
 
-The unsigned, private installer, portable ZIP and SHA-256 files are written to
+The unsigned installer, portable ZIP and SHA-256 files are written to
 `release-windows/`. They contain the unmodified Ghostscript runtime, AGPL text,
 a source offer, and an exact third-party manifest. The build script never signs,
 uploads, releases, or changes `main`.
 
 ## UTM checklist
 
-Install the private setup executable from `release-windows/`, then test the
-installed application. The portable ZIP is retained only for diagnosis if the
+Install the setup executable from `release-windows/`, then test the installed
+application. The portable ZIP is retained for troubleshooting if the
 installer itself has a problem:
 
-1. Run the installer and accept Windows' unsigned-app warning only for this private VM.
+1. Run the installer and confirm the expected unsigned-publisher warning.
 2. Drag in one PDF, several PDFs, and a folder of PDFs.
 3. Test Preserve, Balanced, and Maximum compression.
 4. With **Keep original** off, confirm the compressed PDF retains the original
@@ -48,5 +48,5 @@ installer itself has a problem:
 9. Repeat a batch with **Again**.
 
 Record the Windows edition, architecture, Ghostscript version, and any
-SmartScreen message with the test result. Do not distribute the ZIP beyond
-private testing until the checklist succeeds.
+SmartScreen message with the test result. Do not publish either package until
+the checklist succeeds.

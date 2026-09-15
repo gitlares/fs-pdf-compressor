@@ -1,26 +1,11 @@
-name: Build Windows test candidate
+name: Build Windows x64
 
 on:
-  push:
-    branches:
-      - codex/windows-trash-support
-      - codex/1.0.14-platform-alignment
-    paths:
-      - ".github/workflows/build-windows-candidate.yml"
-      - "build_windows.py"
-      - "windows_app.py"
-      - "linux_app.py"
-      - "fs_pdf_compressor/**"
-      - "installer/windows.iss"
-      - "requirements-windows.txt"
-      - "tests/**"
-      - "scripts/verify_platform_safety.py"
   workflow_dispatch:
     inputs:
       version:
-        description: Version to assemble for private testing
+        description: Version matching the checked-out source
         required: true
-        default: "1.0.14"
 
 permissions:
   contents: read
@@ -29,7 +14,7 @@ jobs:
   assemble:
     runs-on: windows-2022
     env:
-      APP_VERSION: ${{ inputs.version || '1.0.14' }}
+      APP_VERSION: ${{ inputs.version }}
       SOURCE_REF: ${{ github.sha }}
       DIST_DIR: ci-windows-build
     steps:
@@ -69,7 +54,7 @@ jobs:
           }
           "ISCC=$compiler" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      - name: Build unsigned private installer
+      - name: Build unsigned Windows packages
         shell: pwsh
         run: |
           python -m venv .windows-build-venv
@@ -83,7 +68,7 @@ jobs:
           .windows-build-venv\Scripts\python build_windows.py
           if ($LASTEXITCODE -ne 0) { throw "Windows build failed" }
 
-      - name: Verify candidate contents
+      - name: Verify package contents
         shell: pwsh
         run: |
           $installer = Get-ChildItem ci-windows-build -Filter "*-setup.exe" | Select-Object -First 1
@@ -100,10 +85,10 @@ jobs:
             "$app\THIRD_PARTY_MANIFEST.json"
           ) | ForEach-Object { if (-not (Test-Path $_)) { throw "Missing runtime compliance file: $_" } }
 
-      - name: Upload private Windows candidate
+      - name: Upload Windows release candidate
         uses: actions/upload-artifact@v4
         with:
-          name: fs-pdf-compressor-${{ inputs.version || '1.0.14' }}-windows-x86_64-private
+          name: fs-pdf-compressor-${{ inputs.version }}-windows-x86_64
           path: ci-windows-build/*
           if-no-files-found: error
           retention-days: 7

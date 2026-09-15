@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Daniel Lares
 
-"""Build an unsigned, portable x86_64 Windows candidate with Ghostscript.
+"""Build unsigned x86_64 Windows packages with Ghostscript.
 
-Run this from an x64 Python installation on Windows.  The package is intended
-for private testing until it has passed the UTM validation checklist; this
-script neither signs nor publishes anything.
+Run this from an x64 Python installation on Windows. The generated installer
+and portable ZIP must pass the Windows release checklist before publication.
+This script neither signs nor publishes anything.
 """
 
 from __future__ import annotations
@@ -84,7 +84,7 @@ def inno_setup_compiler() -> Path:
         if candidate.is_file():
             return candidate
     raise RuntimeError(
-        "Inno Setup 6 was not found. Install it for the private Windows installer "
+        "Inno Setup 6 was not found. Install it for the Windows installer "
         "or set ISCC to the full path of ISCC.exe."
     )
 
@@ -143,7 +143,7 @@ def bundle_compliance_documents(resources: Path, ghostscript_version_value: str)
     source_tag = f"gs{ghostscript_version_value.replace('.', '')}"
     (resources / "SOURCE_OFFER.md").write_text(
         "# Corresponding source\n\n"
-        f"This unsigned private Windows candidate corresponds to FS PDF Compressor {APP_VERSION}.\n\n"
+        f"This unsigned Windows package corresponds to FS PDF Compressor {APP_VERSION}.\n\n"
         "Application source: https://github.com/gitlares/fs-pdf-compressor\n"
         f"Ghostscript {ghostscript_version_value} source: "
         f"https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/{source_tag}/"
@@ -227,7 +227,7 @@ def main() -> None:
     )
     installer_checksum = write_sha256(installer)
     print(
-        "Built unsigned private candidates:\n"
+        "Built unsigned Windows packages:\n"
         f"Portable ZIP: {archive}\nChecksum: {checksum}\n"
         f"Installer: {installer}\nChecksum: {installer_checksum}"
     )

@@ -34,6 +34,16 @@ xcrun notarytool store-credentials "FS-PDF-Compressor" \
 - An x86_64 Linux desktop for launch and compression testing
 - The AppImage, `.zsync` metadata and SHA-256 file produced by the same workflow
 
+### Windows
+
+- Access to the **Build Windows x64** GitHub Actions workflow
+- A Windows 11 x64 system, or Windows 11 ARM using x64 emulation, for installed
+  application testing
+- The installer, portable ZIP, and matching SHA-256 files produced by the same
+  workflow
+- A release note that clearly states the Windows packages are unsigned until
+  a code-signing process is added
+
 ## Build and sign
 
 ### macOS 14+ Apple Silicon releases
@@ -119,7 +129,27 @@ snapcraft release fs-pdf-compressor REVISION stable
 The Snap Store distributes the promoted revision and installed systems refresh
 automatically. Store credentials must remain outside the repository.
 
-The build script signs bundled Mach-O files first, seals the application with
+### Windows 11 x64 releases
+
+Run **Build Windows x64** from the exact tag being released and enter the same
+version stored in `fs_pdf_compressor/version.py`. The workflow rejects a
+version that does not match the checked-out source and produces these files:
+
+```text
+FS-PDF-Compressor-<version>-windows-x86_64-setup.exe
+FS-PDF-Compressor-<version>-windows-x86_64-setup.exe.sha256
+FS-PDF-Compressor-<version>-windows-x86_64.zip
+FS-PDF-Compressor-<version>-windows-x86_64.zip.sha256
+```
+
+Download the workflow artifact without modifying it. Complete
+[Windows release testing](WINDOWS_TESTING.md) on Windows 11 x64, verify both
+checksums, and confirm that the bundled source manifest names the release tag.
+Attach all four files to the matching GitHub Release. Until Windows code
+signing is introduced, describe the expected unknown-publisher warning and do
+not represent the installer as signed.
+
+The macOS build script signs bundled Mach-O files first, seals the application with
 hardened runtime and a secure timestamp, creates the DMG, and signs the DMG.
 It also writes a third-party license directory, a runtime dependency manifest,
 and a corresponding-source notice into the application bundle. Set `SOURCE_REF`
@@ -196,9 +226,9 @@ at its GitHub URL.
 ## Release compliance
 
 Before publishing, create and push the Git tag named by `SOURCE_REF`. Attach
-the DMG to the matching GitHub Release instead of committing the binary to Git.
-The release source tag must be the source that produced the DMG. Verify these
-files exist in the built application:
+the platform packages to the matching GitHub Release instead of committing
+binaries to Git. Every published package must be produced from that release
+source tag. For macOS, verify these files exist in the built application:
 
 ```sh
 APP="release/FS PDF Compressor.app"
@@ -206,6 +236,10 @@ test -f "$APP/Contents/Resources/SOURCE_OFFER.md"
 test -f "$APP/Contents/Resources/THIRD_PARTY_MANIFEST.json"
 test -d "$APP/Contents/Resources/third-party-licenses/python-runtime"
 ```
+
+For Windows, inspect the portable ZIP and verify that `_internal` contains
+`SOURCE_OFFER.md`, `THIRD_PARTY_MANIFEST.json`, the Ghostscript AGPL text, and
+the bundled runtime named by that manifest.
 
 ## Compatibility audit
 

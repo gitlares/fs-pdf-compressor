@@ -1,23 +1,28 @@
 # FS PDF Compressor roadmap
 
-## Planned for 1.0.8 — Memory efficiency
+## Current direction
 
-- Profile cold launch, settled idle use, Drop Zone-only use, and repeated
-  compression batches on macOS.
-- Reduce the approximately 308 MB clean-launch physical footprint measured on
-  macOS 26 without regressing the already-low 31–34 MB settled resident memory.
-- Audit eager Python, PyObjC, AppKit, and updater initialization, then defer
-  components that are not needed during launch.
-- Review PyInstaller inputs so the application does not import or package
-  unnecessary runtime modules.
-- Confirm that completed workers, batch results, temporary objects, and
-  Ghostscript processes are released promptly.
-- Add repeatable before-and-after measurements and a long-running batch test
-  so footprint regressions are caught before release.
+- Keep macOS, Windows, AppImage, and Snap on one shared compression engine and
+  version line.
+- Preserve the focused local-only workflow and three quality profiles.
+- Add Windows code signing when a sustainable signing process is available.
+- Continue improving release verification on all three operating systems.
 
-This release is about efficiency rather than new features. The native
-interface, Drop Zone, local-only processing, quality profiles, signing, and
-automatic updates must remain unchanged.
+## Completed in 1.0.14 — Platform alignment
+
+- Aligned original-file safety, document locks, PDF validation, background
+  work, and embedded versions across macOS, Windows, AppImage, and Snap.
+- Published and verified macOS 14+ Apple Silicon, Windows 11 x64, Linux
+  AppImage, and Snap Store packages from the shared source.
+- Added platform-specific download pages for Mac, Windows, and Linux with
+  visitor operating-system detection on the GitHub Pages homepage.
+
+## Completed in 1.0.13 — Windows edition and memory efficiency
+
+- Added the Windows 11 x64 installer and portable ZIP with SHA-256 checksums.
+- Added Explorer integration, a single-instance Drop Zone, and Recycle Bin
+  preservation when replacing an original PDF.
+- Reduced idle memory use and deferred unnecessary update initialization.
 
 ## Completed in 1.0.7 — Drop Zone
 

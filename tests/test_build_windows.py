@@ -10,6 +10,21 @@ import build_windows
 
 
 class WindowsBuildTests(unittest.TestCase):
+    def test_windows_package_is_described_as_a_public_unsigned_build(self):
+        root = Path(build_windows.__file__).parent
+        sources = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in (
+                Path(build_windows.__file__),
+                root / "installer" / "windows.iss",
+                root / ".github" / "workflows" / "build-windows-candidate.yml",
+            )
+        )
+
+        self.assertIn("unsigned Windows", sources)
+        self.assertNotIn("private Windows", sources)
+        self.assertNotIn("private installer", sources)
+
     def test_windows_package_uses_the_product_icon_and_drop_zone_assets(self):
         source = Path(build_windows.__file__).read_text(encoding="utf-8")
 

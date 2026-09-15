@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Stop creating local diagnostic logs on macOS, Windows, and Linux; discard
+  Ghostscript process output while retaining concise failure messages in the
+  interface.
+- Align the public repository description, Windows build workflow, release
+  instructions, contribution guide, roadmap, and AI-readable product summary
+  with the supported Windows 11 x64 edition.
+
 ## 1.0.14 — 2026-09-07
 
 - Align macOS, Windows, AppImage, and Snap on one embedded version and the

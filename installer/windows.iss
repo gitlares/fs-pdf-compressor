@@ -1,20 +1,20 @@
 ; SPDX-License-Identifier: AGPL-3.0-or-later
 ; Copyright (C) 2026 Daniel Lares
 
-; Private Windows installer for FS PDF Compressor. Values are supplied only by
+; Windows installer for FS PDF Compressor. Values are supplied only by
 ; build_windows.py; this script never uploads or publishes the generated EXE.
 
 #ifndef SourceDir
   #error SourceDir must point at the PyInstaller application directory
 #endif
 #ifndef OutputDir
-  #error OutputDir must point at the private candidate directory
+  #error OutputDir must point at the package output directory
 #endif
 #ifndef AppVersion
   #error AppVersion must be supplied by the build script
 #endif
 #ifndef OutputName
-  #define OutputName "FS-PDF-Compressor-private-windows-x86_64-setup"
+  #define OutputName "FS-PDF-Compressor-windows-x86_64-setup"
 #endif
 
 [Setup]

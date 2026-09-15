@@ -1,7 +1,7 @@
 # Privacy
 
 FS PDF Compressor processes PDF files entirely on the user's computer on
-macOS and Linux.
+macOS, Windows and Linux.
 
 ## Documents and usage data
 
@@ -20,6 +20,9 @@ limited to software updates and links explicitly opened by the user:
 
 - On macOS, Sparkle periodically reads the public update feed hosted on GitHub
   Pages and can download signed update archives from GitHub Releases.
+- On Windows, **Check for Updates…** opens the public GitHub Releases page in
+  the user's browser. The app does not check for or download updates in the
+  background.
 - On Linux, the AppImage contacts the GitHub Releases API only when the user
   selects **Check for Updates…**. If the user accepts an available update, it
   downloads the AppImage and its published SHA-256 checksum from GitHub.
@@ -40,6 +43,7 @@ may include the PDF filename and Ghostscript's error message, but not the PDF
 contents:
 
 - macOS: `~/Library/Logs/FS PDF Compressor/compression.log`
+- Windows: `%LOCALAPPDATA%\FS PDF Compressor\compression.log`
 - Linux:
   `${XDG_STATE_HOME:-~/.local/state}/fs-pdf-compressor/compression.log`
 

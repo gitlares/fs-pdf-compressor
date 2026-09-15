@@ -16,7 +16,6 @@ from fs_pdf_compressor.core import (
     QUALITY_PROFILES,
     bundle_contents_dir,
     compress_pdf,
-    compression_logger,
     expand_pdf_paths,
 )
 from fs_pdf_compressor.macos_drop_zone import DropZonePanel
@@ -55,7 +54,6 @@ def load_sparkle_updater(start: bool = True):
             start, None, None
         )
     except Exception:
-        compression_logger().exception("Could not initialize the Sparkle updater")
         return None
 
 
@@ -267,7 +265,6 @@ class PDFCompressorController(FN.NSObject):
         try:
             pdfs = self._expand_pdf_paths(paths)
         except Exception:
-            compression_logger().exception("Could not discover PDFs")
             AppHelper.callAfter(self._discovery_finished, [], True)
         else:
             AppHelper.callAfter(self._discovery_finished, pdfs, False)
@@ -336,7 +333,7 @@ class PDFCompressorController(FN.NSObject):
                 progress = (index + 1) / total * 100
                 AppHelper.callAfter(self._update_result, index, status, metrics, progress)
         except Exception:
-            compression_logger().exception("Unexpected batch worker failure")
+            pass
         finally:
             AppHelper.callAfter(self._finish_compression)
 
@@ -493,7 +490,6 @@ class AppDelegate(FN.NSObject):
     def _finish_automatic_update_probe(self, result):
         self._update_probe_thread = None
         if result is None:
-            compression_logger().info("Automatic update probe could not inspect the appcast")
             return
         FN.NSUserDefaults.standardUserDefaults().setDouble_forKey_(
             time.time(), SPARKLE_PROBE_LAST_CHECK_KEY
@@ -508,7 +504,7 @@ class AppDelegate(FN.NSObject):
             if updater.automaticallyChecksForUpdates():
                 updater.checkForUpdatesInBackground()
         except Exception:
-            compression_logger().exception("Could not start Sparkle after update probe")
+            pass
 
     def application_openURLs_(self, application, urls):
         """Receive PDF selections sent by the bundled Finder Quick Action."""

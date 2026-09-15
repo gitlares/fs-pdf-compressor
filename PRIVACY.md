@@ -35,17 +35,3 @@ No PDF, PDF content or filename is included intentionally in these update
 requests. GitHub may receive normal connection information such as an IP
 address and user agent under the
 [GitHub Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
-
-## Local diagnostics
-
-If compression fails, the app records a technical error locally. The record
-may include the PDF filename and Ghostscript's error message, but not the PDF
-contents:
-
-- macOS: `~/Library/Logs/FS PDF Compressor/compression.log`
-- Windows: `%LOCALAPPDATA%\FS PDF Compressor\compression.log`
-- Linux:
-  `${XDG_STATE_HOME:-~/.local/state}/fs-pdf-compressor/compression.log`
-
-These diagnostic files are never uploaded or shared automatically and can be
-inspected or deleted by the user.

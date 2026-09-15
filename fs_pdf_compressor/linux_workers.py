@@ -9,7 +9,7 @@ from pathlib import Path
 
 from PySide6 import QtCore
 
-from fs_pdf_compressor.core import compress_pdf, compression_logger, expand_pdf_paths
+from fs_pdf_compressor.core import compress_pdf, expand_pdf_paths
 from fs_pdf_compressor.linux_update import (
     available_release,
     download_verified_appimage,
@@ -52,7 +52,7 @@ class CompressionWorker(QtCore.QObject):
                 status, metric = compress_pdf(path, self.setting, self.keep_original)
                 self.result.emit(index, status, metric)
         except Exception:
-            compression_logger().exception("Unexpected Linux batch worker failure")
+            pass
         finally:
             self.finished.emit()
 

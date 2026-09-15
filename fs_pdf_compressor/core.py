@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-import logging
-from logging.handlers import RotatingFileHandler
 import os
 import shutil
 import subprocess
@@ -37,33 +35,6 @@ QUALITY_PROFILES = (
     ),
 )
 QUALITY_CONTROL_LABELS = ("Preserve", "Balanced", "Maximum")
-
-
-def _log_path() -> Path:
-    if sys.platform == "darwin":
-        return Path.home() / "Library" / "Logs" / APP_NAME / "compression.log"
-    if sys.platform == "win32":
-        return Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / APP_NAME / "compression.log"
-    state_home = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
-    return state_home / "fs-pdf-compressor" / "compression.log"
-
-
-def compression_logger() -> logging.Logger:
-    """Return a local-only error log without sending document data anywhere."""
-    logger = logging.getLogger("fs_pdf_compressor")
-    if logger.handlers:
-        return logger
-    try:
-        log_path = _log_path()
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        handler = RotatingFileHandler(log_path, maxBytes=1_000_000, backupCount=2, encoding="utf-8")
-        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
-        logger.propagate = False
-    except OSError:
-        logger.addHandler(logging.NullHandler())
-    return logger
 
 
 def format_file_size(byte_count: int) -> str:
@@ -214,13 +185,6 @@ def expand_pdf_paths(paths: list[str]) -> list[str]:
     return pdfs
 
 
-def _error_output_tail(stream, limit: int = 8192) -> str:
-    """Return a bounded diagnostic tail from a process output stream."""
-    stream.seek(0, os.SEEK_END)
-    stream.seek(max(0, stream.tell() - limit))
-    return stream.read().decode("utf-8", errors="replace").strip()
-
-
 def _ghostscript_command(
     gs_path: str,
     temp_path: str,
@@ -279,15 +243,12 @@ def _replace_and_trash_original(temp_path: str, original_path: str) -> bool:
             move_to_system_trash(Path(original_path))
             if os.path.exists(original_path):
                 raise TrashError("The original was not moved to the system trash")
-        except Exception as error:
+        except Exception:
             # Recycling is best-effort protection, not a prerequisite for the
             # user's selected replace mode. Keep the recovery snapshot until
             # installation succeeds, including when the trash backend moved
             # the original before reporting an error.
-            compression_logger().warning(
-                "Could not recycle %s; replacing without confirmed trash recovery: %s",
-                original_path, error,
-            )
+            pass
         try:
             os.replace(temp_path, original_path)
         except Exception:
@@ -326,42 +287,32 @@ def _valid_pdf_output(path):
 
 def _compress_locked(original_path, pdf_settings, keep_original):
     filename = os.path.basename(original_path)
-    logger = compression_logger()
     temp_path = None
     try:
         gs_path, gs_environment = get_ghostscript_config()
         if not gs_path:
-            logger.error("Ghostscript was unavailable while compressing %s", filename)
             return f"{filename} — Ghostscript unavailable", None
 
         original_stat = os.stat(original_path)
         original_size = original_stat.st_size
         fd, temp_path = tempfile.mkstemp(prefix=".fs-pdf-", suffix=".tmp", dir=Path(original_path).parent)
         os.close(fd)
-        with tempfile.SpooledTemporaryFile(max_size=64 * 1024, mode="w+b") as error_output:
-            result = subprocess.run(
-                _ghostscript_command(
-                    gs_path,
-                    temp_path,
-                    original_path,
-                    pdf_settings,
-                ),
-                env=gs_environment,
-                stdout=subprocess.DEVNULL,
-                stderr=error_output,
-                **_ghostscript_subprocess_options(),
-            )
-            if result.returncode != 0 or not os.path.exists(temp_path):
-                if os.path.exists(temp_path):
-                    os.unlink(temp_path)
-                detail = _error_output_tail(error_output)
-                logger.error(
-                    "Ghostscript failed for %s (exit %s): %s",
-                    filename,
-                    result.returncode,
-                    detail,
-                )
-                return f"{filename} — compression failed", None
+        result = subprocess.run(
+            _ghostscript_command(
+                gs_path,
+                temp_path,
+                original_path,
+                pdf_settings,
+            ),
+            env=gs_environment,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            **_ghostscript_subprocess_options(),
+        )
+        if result.returncode != 0 or not os.path.exists(temp_path):
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+            return f"{filename} — compression failed", None
 
         new_size = os.path.getsize(temp_path)
         if not _valid_pdf_output(temp_path):
@@ -399,7 +350,6 @@ def _compress_locked(original_path, pdf_settings, keep_original):
                 os.unlink(temp_path)
             except OSError:
                 pass
-        logger.exception("Unexpected compression failure for %s", filename)
         if isinstance(error, TrashError):
             return f"{filename} — could not recycle original; not replaced", None
         return f"{filename} — compression failed", None

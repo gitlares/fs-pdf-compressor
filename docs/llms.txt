@@ -5,6 +5,9 @@
 ## Official pages
 
 - [Homepage](https://gitlares.github.io/fs-pdf-compressor/): Product overview, supported systems, features, and downloads.
+- [Mac](https://gitlares.github.io/fs-pdf-compressor/mac/): Apple Silicon requirements, notarized DMG installation, Finder Quick Action, and local compression details.
+- [Windows](https://gitlares.github.io/fs-pdf-compressor/windows/): Windows 11 x64 installer, checksum verification, Explorer action, and current signing status.
+- [Linux](https://gitlares.github.io/fs-pdf-compressor/linux/): Snap and AppImage installation, file-manager actions, updates, and Wayland notes.
 - [Source code](https://github.com/gitlares/fs-pdf-compressor): Official AGPL-3.0-or-later repository.
 - [Releases](https://github.com/gitlares/fs-pdf-compressor/releases): Signed macOS DMG, Linux AppImage, Windows installer and portable ZIP, checksums, and release notes.
 - [Privacy](https://github.com/gitlares/fs-pdf-compressor/blob/main/PRIVACY.md): Data handling and local diagnostic logging.
@@ -15,8 +18,8 @@
 
 ## Product facts
 
-- Current release: 1.0.13.
-- Version 1.0.13 is a small memory-footprint maintenance release: it keeps the macOS update system secure while deferring its full framework until needed, bounds temporary diagnostic memory, and releases completed Linux workers promptly.
+- Current release: 1.0.14.
+- Version 1.0.14 aligns file replacement safety and packaging across macOS, Windows, and Linux while keeping the same three compression profiles and local-only workflow.
 - Supported macOS systems: macOS 14 or later on Apple Silicon. The Mac app is Developer ID signed and notarized by Apple.
 - Supported Linux systems: x86_64 Linux through a self-contained AppImage.
 - Supported Windows systems: Windows 11 x64 via a per-user installer or portable ZIP. The Windows distribution is currently unsigned and published with SHA-256 checksums.

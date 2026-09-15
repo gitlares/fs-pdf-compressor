@@ -8,9 +8,18 @@ __pycache__/
 # PyInstaller and release artifacts
 .pyinstaller-spec/
 .pyinstaller-work/
+.pyinstaller-*/
 build/
 dist/
+output/
+tmp/
 release/
+release-*-ci/
+release-*-preview/
+release-compliance-test/
+release-footer-preview/
+release-test/
+release-update-test/
 *.spec
 *.dmg
 *.app/

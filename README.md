@@ -174,10 +174,6 @@ If FS PDF Compressor saves you time, you can support its continued development
 with an optional [PayPal donation](https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ).
 The app remains free and open source for everyone.
 
-## Other projects
-
-[FS User Stories](https://gitlares.github.io/fs-user-stories/) · [Source code](https://github.com/gitlares/fs-user-stories)
-
 ## Privacy
 
 PDFs never leave your computer. Network access is limited to documented update
@@ -191,3 +187,8 @@ or later. The distributed app bundles Ghostscript 10.07.1 under the AGPL and
 other open-source libraries; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 Copyright © 2026 Daniel Lares.
+
+## More apps by Daniel Lares
+
+- **[FS Desktop LEDs](https://gitlares.github.io/fs-desktop-leds/)** — Control desk lighting from the Mac menu bar. [Source code](https://github.com/gitlares/fs-desktop-leds).
+- **[FS User Stories](https://gitlares.github.io/fs-user-stories/)** — Organize user stories with local data and optional Git sharing. [Source code](https://github.com/gitlares/fs-user-stories).

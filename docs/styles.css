@@ -285,3 +285,28 @@ footer div { display: flex; gap: 22px; }
   html { scroll-behavior: auto; }
   .button { transition: none; }
 }
+
+/* Shared project links wrap independently from the utility links. */
+footer {
+  flex-wrap: wrap;
+  gap: 18px 24px;
+}
+footer > div {
+  flex-wrap: wrap;
+  max-width: 100%;
+  gap: 12px 22px;
+}
+footer .related-projects {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 22px;
+}
+footer .related-projects span {
+  font-weight: 600;
+}
+footer .related-projects a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

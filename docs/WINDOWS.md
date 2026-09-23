@@ -7,7 +7,7 @@ the macOS and Linux editions. It is distributed under AGPL-3.0-or-later.
 ## Install the public build
 
 For Windows 11 x64, download the per-user installer or portable ZIP from the
-[1.0.14 release](https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.14).
+[1.0.15 release](https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.15).
 Each artifact has a matching SHA-256 file. The installer includes the
 unmodified AGPL Ghostscript runtime and needs no administrator rights.
 

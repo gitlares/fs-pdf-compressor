@@ -28,6 +28,8 @@ since 1.0.14 also removes local diagnostic log files.
   verified their packaged compliance files. The manifest records app 1.0.15,
   Ghostscript 10.08.0, Python 3.12.10, PySide6 6.8.3 and the exact source
   commit `0858274bed8a88631e8a92f7f657f9bf59bfd1b2`.
+- The Windows installer was tested on Windows and confirmed functional before
+  publication.
 - Package checksums:
   - AppImage: `429b9ddc152ed7648f09ee65c4a6a9888bdb1c1c1b5c9e9f0b18f4c1299acecf`
   - Snap: `ea7e2e5b02f05ad220a5979fa92477a209cf41f26e989223f49e93a3bdb5d175`
@@ -42,9 +44,6 @@ since 1.0.14 also removes local diagnostic log files.
 - Build the macOS 14 candidate, audit every Mach-O deployment target, launch
   the app, test all three compression profiles and both Keep original states,
   then sign, notarize, staple, and assess the final DMG.
-- Install the Windows candidate on Windows 11 x64 and test Explorer
-  integration, Drop Zone, all profiles, both Keep original states, update
-  link and Recycle Bin behavior.
 - Open the AppImage and Snap in an interactive Linux desktop session and check
   file picker, drag and drop, Wayland, removable media and host-trash recovery.
 - On every platform, confirm that Keep original defaults to off on a fresh

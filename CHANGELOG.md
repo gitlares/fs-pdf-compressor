@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.15 — 2026-09-23
 
 - Update bundled Ghostscript to 10.08.0 in the macOS, Windows, AppImage,
   and Snap build recipes. The PDF appearance issue remains open because the

@@ -18,12 +18,12 @@
 
 ## Product facts
 
-- Current release: 1.0.14.
-- Version 1.0.14 aligns file replacement safety and packaging across macOS, Windows, and Linux while keeping the same three compression profiles and local-only workflow.
+- Current release: 1.0.15.
+- Version 1.0.15 updates Ghostscript to 10.08.0, remembers the Keep original preference, and stops writing local diagnostic log files.
 - Supported macOS systems: macOS 14 or later on Apple Silicon. The Mac app is Developer ID signed and notarized by Apple.
 - Supported Linux systems: x86_64 Linux through a self-contained AppImage.
 - Supported Windows systems: Windows 11 x64 via a per-user installer or portable ZIP. The Windows distribution is currently unsigned and published with SHA-256 checksums.
-- Compression engine: Ghostscript 10.08.0 in the upcoming 1.0.15 release; published 1.0.14 packages retain their bundled versions.
+- Compression engine: Ghostscript 10.08.0 in the current 1.0.15 release.
 - Quality profiles: Preserve, Balanced, and Maximum. Balanced is the default.
 - Privacy: PDF contents are processed locally and are never uploaded.
 - Accounts and tracking: no account, analytics, telemetry, advertising, or subscription.

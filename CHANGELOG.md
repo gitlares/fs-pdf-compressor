@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Update bundled Ghostscript to 10.08.0 in the macOS, Windows, AppImage,
+  and Snap build recipes. The PDF appearance issue remains open because the
+  affected sample still renders incorrectly in macOS Preview/PDFKit.
+- Remember the Keep original choice across restarts on macOS, Windows, and
+  Linux. A fresh installation keeps the option off until the user changes it.
 - Stop creating local diagnostic logs on macOS, Windows, and Linux; discard
   Ghostscript process output while retaining concise failure messages in the
   interface.

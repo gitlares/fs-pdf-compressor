@@ -8,6 +8,28 @@ from pathlib import Path
 
 @unittest.skipUnless(sys.platform == "darwin", "macOS AppKit test")
 class FinderQuickActionTests(unittest.TestCase):
+    def test_keep_original_choice_is_saved_on_each_toggle(self):
+        import native_app
+        from unittest import mock
+
+        defaults = mock.Mock()
+        sender = mock.Mock()
+        controller = native_app.PDFCompressorController.alloc()
+        foundation = mock.Mock()
+        foundation.NSUserDefaults.standardUserDefaults.return_value = defaults
+        with mock.patch.object(native_app, "FN", foundation):
+            sender.state.return_value = native_app.AK.NSControlStateValueOn
+            controller.toggleKeepOriginal_(sender)
+            defaults.setBool_forKey_.assert_called_with(
+                True, native_app.KEEP_ORIGINAL_DEFAULTS_KEY
+            )
+
+            sender.state.return_value = native_app.AK.NSControlStateValueOff
+            controller.toggleKeepOriginal_(sender)
+            defaults.setBool_forKey_.assert_called_with(
+                False, native_app.KEEP_ORIGINAL_DEFAULTS_KEY
+            )
+
     def test_quit_is_cancelled_while_compressing(self):
         import native_app
         from unittest import mock

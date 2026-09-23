@@ -112,7 +112,7 @@ Magnolia build workaround and confined smoke tests. Build on Ubuntu with Snapcra
 
 ```sh
 snapcraft pack
-sudo snap install --dangerous ./fs-pdf-compressor_1.0.14_amd64.snap
+sudo snap install --dangerous ./fs-pdf-compressor_1.0.15_amd64.snap
 ```
 
 Test file selection, drag and drop, all three compression profiles and the
@@ -121,7 +121,7 @@ that store revision on a separate Linux system, and then promote the verified
 revision to `stable`:
 
 ```sh
-snapcraft upload ./fs-pdf-compressor_1.0.14_amd64.snap --release candidate
+snapcraft upload ./fs-pdf-compressor_1.0.15_amd64.snap --release candidate
 snapcraft status fs-pdf-compressor
 snapcraft release fs-pdf-compressor REVISION stable
 ```
@@ -240,6 +240,16 @@ test -d "$APP/Contents/Resources/third-party-licenses/python-runtime"
 For Windows, inspect the portable ZIP and verify that `_internal` contains
 `SOURCE_OFFER.md`, `THIRD_PARTY_MANIFEST.json`, the Ghostscript AGPL text, and
 the bundled runtime named by that manifest.
+
+For 1.0.15, verify that the Ghostscript executable inside each macOS, Windows,
+AppImage, and Snap package reports `10.08.0`. Recheck the samples in
+[issue #9](https://github.com/gitlares/fs-pdf-compressor/issues/9) with macOS
+Preview/PDFKit as well as a second PDF renderer. Do not describe the engine
+upgrade as a fix for that issue unless the affected pages render correctly.
+On every platform, start with a fresh preferences store and confirm that
+Keep original is off. Turn it on, restart the app, and confirm it remains on;
+then turn it off, restart again, and confirm it remains off. Verify that both
+states still produce the expected output files.
 
 ## Compatibility audit
 

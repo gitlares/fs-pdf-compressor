@@ -29,6 +29,7 @@ BUILD = ROOT / ".windows-build"
 APP_NAME = "FS PDF Compressor"
 from fs_pdf_compressor.version import APP_VERSION
 ARCHITECTURE = "x86_64"
+GHOSTSCRIPT_VERSION = "10.08.0"
 PACKAGE_NAME = f"FS-PDF-Compressor-{APP_VERSION}-windows-{ARCHITECTURE}"
 
 
@@ -103,6 +104,10 @@ def bundle_ghostscript(resources: Path) -> tuple[Path, str]:
     source_root = ghostscript_root()
     source_binary = source_root / "bin" / "gswin64c.exe"
     version = ghostscript_version(source_binary)
+    if version != GHOSTSCRIPT_VERSION:
+        raise RuntimeError(
+            f"Ghostscript {GHOSTSCRIPT_VERSION} is required; found {version}"
+        )
     destination = resources / "ghostscript"
     bin_directory = destination / "bin"
     bin_directory.mkdir(parents=True)

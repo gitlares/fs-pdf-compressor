@@ -70,10 +70,13 @@ chmod +x FS-PDF-Compressor-x86_64.AppImage
 ./FS-PDF-Compressor-x86_64.AppImage
 ```
 
-For a local Linux build, install Ghostscript and provide a verified
-`appimagetool` executable:
+For a local Linux build, compile the pinned Ghostscript 10.08.0 source and
+provide a verified `appimagetool` executable:
 
 ```sh
+sudo apt-get install build-essential curl
+scripts/build-ghostscript-linux.sh /absolute/path/to/ghostscript-10.08.0
+GHOSTSCRIPT_ROOT=/absolute/path/to/ghostscript-10.08.0 \
 APPIMAGETOOL=/absolute/path/to/appimagetool \
   .linux-build-venv/bin/python build_linux.py
 ```

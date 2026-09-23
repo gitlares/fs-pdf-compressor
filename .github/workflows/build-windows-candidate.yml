@@ -28,9 +28,9 @@ jobs:
       - name: Extract pinned AGPL Ghostscript runtime
         shell: pwsh
         run: |
-          $runtime = Join-Path $env:RUNNER_TEMP "gs10071w64.exe"
-          Invoke-WebRequest -Uri "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10071/gs10071w64.exe" -OutFile $runtime
-          if ((Get-FileHash -Algorithm SHA256 $runtime).Hash.ToLower() -ne "3a4c28d0aac47aa7cccd35a5932c55110376e9dbd966898dde388b7faba444a4") {
+          $runtime = Join-Path $env:RUNNER_TEMP "gs10080w64.exe"
+          Invoke-WebRequest -Uri "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10080/gs10080w64.exe" -OutFile $runtime
+          if ((Get-FileHash -Algorithm SHA256 $runtime).Hash.ToLower() -ne "52a91b8bf09298788d7a57b9206127026c23eacd75405f0a131e26dc381dce50") {
             throw "Ghostscript runtime checksum did not match"
           }
           $extractRoot = Join-Path $env:RUNNER_TEMP "ghostscript"

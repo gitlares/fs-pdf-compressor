@@ -6,7 +6,7 @@ on:
       version:
         description: Version matching the checked-out source
         required: true
-        default: "1.0.14"
+        default: "1.0.15"
 
 permissions:
   contents: read
@@ -23,10 +23,12 @@ jobs:
       - name: Install Linux build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes ghostscript libfuse2 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0
+          sudo apt-get install --yes build-essential libfuse2 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0
           python3 -m venv .linux-build-venv
           .linux-build-venv/bin/python -m pip install --upgrade pip
           .linux-build-venv/bin/python -m pip install -r requirements-linux.txt
+      - name: Build pinned Ghostscript 10.08.0
+        run: scripts/build-ghostscript-linux.sh "$RUNNER_TEMP/ghostscript-10.08.0"
       - name: Download pinned AppImage packager
         run: |
           mkdir -p .tools
@@ -36,6 +38,8 @@ jobs:
           echo "a6d71e2b6cd66f8e8d16c37ad164658985e0cf5fcaa950c90a482890cb9d13e0  $APPIMAGETOOL" | sha256sum --check --status
           chmod +x "$APPIMAGETOOL"
       - name: Assemble AppImage
+        env:
+          GHOSTSCRIPT_ROOT: ${{ runner.temp }}/ghostscript-10.08.0
         run: .linux-build-venv/bin/python build_linux.py
       - name: Verify bundled Qt X11 runtime
         run: |

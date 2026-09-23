@@ -46,6 +46,7 @@ QUICK_ACTION_SOURCE = ROOT / "macos_quick_action" / "ActionRequestHandler.m"
 QUICK_ACTION_ENTITLEMENTS = ROOT / "macos_quick_action" / "QuickAction.entitlements"
 DMG_NAME = f"FS-PDF-Compressor-{APP_VERSION}-arm64.dmg"
 GHOSTSCRIPT_PREFIX = Path("/opt/homebrew/opt/ghostscript").resolve()
+GHOSTSCRIPT_VERSION = "10.08.0"
 COMPATIBILITY_GHOSTSCRIPT_APP = os.environ.get("MACOS_GHOSTSCRIPT_SOURCE_APP")
 SIGNING_IDENTITY = os.environ.get("MACOS_SIGNING_IDENTITY", "-")
 SIGNING_KEYCHAIN = os.environ.get("MACOS_SIGNING_KEYCHAIN")
@@ -200,9 +201,21 @@ def bundle_ghostscript() -> None:
         source_resources = source_app / "Contents" / "Resources" / "ghostscript"
         source_frameworks = source_app / "Contents" / "Frameworks" / "Ghostscript"
         source_licenses = source_app / "Contents" / "Resources" / "third-party-licenses"
+        source_manifest = source_app / "Contents" / "Resources" / "THIRD_PARTY_MANIFEST.json"
         if not (source_resources / "bin" / "gs").is_file() or not source_frameworks.is_dir():
             raise RuntimeError(
                 "MACOS_GHOSTSCRIPT_SOURCE_APP must contain a bundled Ghostscript runtime"
+            )
+        if not source_manifest.is_file():
+            raise RuntimeError("The source app is missing THIRD_PARTY_MANIFEST.json")
+        manifest_dependencies = json.loads(source_manifest.read_text())["homebrew_dependencies"]
+        source_version = next(
+            (item["version"] for item in manifest_dependencies if item["name"] == "ghostscript"),
+            None,
+        )
+        if source_version != GHOSTSCRIPT_VERSION:
+            raise RuntimeError(
+                f"Ghostscript {GHOSTSCRIPT_VERSION} is required; source app has {source_version}"
             )
         shutil.copytree(
             source_resources,
@@ -228,6 +241,13 @@ def bundle_ghostscript() -> None:
     if not source_gs.is_file():
         raise RuntimeError(
             "Ghostscript for Apple Silicon is not installed. Run: brew install ghostscript"
+        )
+    installed_version = subprocess.run(
+        [str(source_gs), "--version"], check=True, text=True, capture_output=True
+    ).stdout.strip()
+    if installed_version != GHOSTSCRIPT_VERSION:
+        raise RuntimeError(
+            f"Ghostscript {GHOSTSCRIPT_VERSION} is required; found {installed_version}"
         )
 
     resources = APP / "Contents" / "Resources" / "ghostscript"

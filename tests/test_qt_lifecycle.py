@@ -3,6 +3,7 @@
 
 import importlib.util
 import os
+import tempfile
 import unittest
 from unittest import mock
 
@@ -54,6 +55,37 @@ class QtLifecycleTests(unittest.TestCase):
         with mock.patch.object(self.module.sys, "platform", "linux"), mock.patch.dict(os.environ, {"SNAP": "/snap/test"}), mock.patch.object(self.module.QtWidgets.QMessageBox, "information") as message:
             self.window.check_for_updates()
         self.assertIn("Snap Store", message.call_args.args[2])
+
+    def test_keep_original_survives_reopening_and_can_be_turned_off(self):
+        from PySide6 import QtCore
+
+        original_settings = QtCore.QSettings
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "settings.ini")
+
+            def isolated_settings(*_args):
+                return original_settings(path, original_settings.IniFormat)
+
+            with mock.patch.object(QtCore, "QSettings", side_effect=isolated_settings):
+                first = self.module.PDFCompressorWindow()
+                first.drop_zone.hide()
+                self.addCleanup(first.drop_zone.deleteLater)
+                self.addCleanup(first.deleteLater)
+                self.assertFalse(first.keep_original.isChecked())
+
+                first.keep_original.setChecked(True)
+                second = self.module.PDFCompressorWindow()
+                second.drop_zone.hide()
+                self.addCleanup(second.drop_zone.deleteLater)
+                self.addCleanup(second.deleteLater)
+                self.assertTrue(second.keep_original.isChecked())
+
+                second.keep_original.setChecked(False)
+                third = self.module.PDFCompressorWindow()
+                third.drop_zone.hide()
+                self.addCleanup(third.drop_zone.deleteLater)
+                self.addCleanup(third.deleteLater)
+                self.assertFalse(third.keep_original.isChecked())
 
 
 if __name__ == "__main__":

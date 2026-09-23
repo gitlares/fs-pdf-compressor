@@ -10,7 +10,7 @@ On Ubuntu 24.04 with Snapcraft installed:
 
 ```sh
 snapcraft pack
-sudo snap install --dangerous ./fs-pdf-compressor_1.0.14_amd64.snap
+sudo snap install --dangerous ./fs-pdf-compressor_1.0.15_amd64.snap
 fs-pdf-compressor
 ```
 
@@ -25,11 +25,11 @@ trash recovery was unavailable. Keep original remains a separate copy mode.
 
 ### Runtime resources
 
-The layouts in `snapcraft.yaml` expose the bundled Ghostscript resources,
+The layouts in `snapcraft.yaml` expose the bundled Ghostscript auxiliary files,
 fonts, and ICC profiles at Ghostscript's compiled-in `/usr/share` paths inside
-the Snap namespace. Do not remove them: a confined build otherwise fails with
-`Can't find initialization file gs_init.ps`, even when the same code works in
-an AppImage. The Wayland cursor/EGL runtime libraries are also staged explicitly.
+the Snap namespace. Ghostscript 10.08.0 compiles its initialization resources
+into the executable, while keeping the supporting `lib` directory in the
+package. The Wayland cursor/EGL runtime libraries are also staged explicitly.
 
 ### Magnolia isolated-build workaround
 
@@ -62,7 +62,7 @@ Upload a tested build to `candidate`, install that store revision on a separate
 Linux system, and promote the verified revision to `stable`:
 
 ```sh
-snapcraft upload ./fs-pdf-compressor_1.0.14_amd64.snap --release candidate
+snapcraft upload ./fs-pdf-compressor_1.0.15_amd64.snap --release candidate
 snapcraft status fs-pdf-compressor
 snapcraft release fs-pdf-compressor REVISION stable
 ```

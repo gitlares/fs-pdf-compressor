@@ -30,6 +30,7 @@ BUILD = ROOT / ".linux-build"
 APP_NAME = "FS PDF Compressor"
 from fs_pdf_compressor.version import APP_VERSION
 ARCHITECTURE = "x86_64"
+GHOSTSCRIPT_VERSION = "10.08.0"
 APPDIR = BUILD / "AppDir"
 APPIMAGE_NAME = f"FS-PDF-Compressor-{ARCHITECTURE}.AppImage"
 UPDATE_INFORMATION = (
@@ -72,10 +73,14 @@ def require_linux_x86_64() -> None:
 
 
 def ghostscript_data_dir() -> Path:
-    candidates = sorted(Path("/usr/share/ghostscript").glob("*/Resource"))
-    if not candidates:
-        raise RuntimeError("Ghostscript resources were not found; install the ghostscript package")
-    return candidates[-1].parent
+    prefix = Path(os.environ.get("GHOSTSCRIPT_ROOT", "/usr"))
+    candidate = prefix / "share" / "ghostscript" / GHOSTSCRIPT_VERSION
+    # Ghostscript 10.08.0 compiles its initialization resources into the
+    # executable, so source builds install the auxiliary `lib` directory but
+    # no longer necessarily install `Resource/Init`.
+    if not (candidate / "lib").is_dir():
+        raise RuntimeError(f"Ghostscript {GHOSTSCRIPT_VERSION} resources were not found")
+    return candidate
 
 
 def shared_library_locations(binary: Path) -> list[Path]:
@@ -117,20 +122,27 @@ def copy_shared_libraries(binary: Path, destination: Path) -> None:
 
 
 def bundle_ghostscript(pyinstaller_resources: Path) -> None:
-    source_gs = Path(shutil.which("gs") or "")
+    prefix = Path(os.environ.get("GHOSTSCRIPT_ROOT", "/usr"))
+    source_gs = prefix / "bin" / "gs"
     if not source_gs.is_file():
-        raise RuntimeError("Ghostscript is not installed. Run: sudo apt-get install ghostscript")
+        raise RuntimeError(f"Ghostscript was not found at {source_gs}")
+    installed_version = command_output(str(source_gs), "--version").strip()
+    if installed_version != GHOSTSCRIPT_VERSION:
+        raise RuntimeError(
+            f"Ghostscript {GHOSTSCRIPT_VERSION} is required; found {installed_version}"
+        )
     destination = pyinstaller_resources / "ghostscript"
     (destination / "bin").mkdir(parents=True)
     shutil.copy2(source_gs, destination / "bin" / "gs")
     shutil.copytree(ghostscript_data_dir(), destination / "share" / "ghostscript")
     copy_shared_libraries(source_gs, destination / "lib")
-    for candidate in (Path("/usr/share/doc/ghostscript/copyright"), ROOT / "LICENSE"):
+    for candidate in (prefix / "share" / "doc" / "ghostscript" / "copyright", ROOT / "LICENSE"):
         if candidate.is_file():
             shutil.copy2(candidate, destination / candidate.name)
     (destination / "SOURCE_OFFER.md").write_text(
         "Ghostscript is distributed under GNU AGPL-3.0-or-later.\n"
-        "Corresponding source: https://github.com/ArtifexSoftware/ghostpdl-downloads\n",
+        "Corresponding source: https://github.com/ArtifexSoftware/ghostpdl-downloads/"
+        "releases/download/gs10080/ghostscript-10.08.0.tar.xz\n",
         encoding="utf-8",
     )
 
@@ -189,6 +201,7 @@ def bundle_compliance_documents() -> None:
                 "python": sys.version.split()[0],
                 "pyside6": package_version("PySide6"),
                 "pyinstaller": package_version("PyInstaller"),
+                "ghostscript": GHOSTSCRIPT_VERSION,
                 "ghostscript_license": "AGPL-3.0-or-later",
             },
             indent=2,
@@ -202,7 +215,8 @@ def bundle_compliance_documents() -> None:
         f"This FS PDF Compressor {APP_VERSION} AppImage corresponds to "
         f"{ROOT.name} source ref `{os.environ.get('SOURCE_REF', f'v{APP_VERSION}')}`.\n\n"
         "Application source: https://github.com/gitlares/fs-pdf-compressor\n"
-        "Ghostscript source: https://github.com/ArtifexSoftware/ghostpdl-downloads\n"
+        "Ghostscript source: https://github.com/ArtifexSoftware/ghostpdl-downloads/"
+        "releases/download/gs10080/ghostscript-10.08.0.tar.xz\n"
         "PySide6 source: https://code.qt.io/pyside/pyside-setup\n"
         "PyInstaller source: https://github.com/pyinstaller/pyinstaller\n",
         encoding="utf-8",

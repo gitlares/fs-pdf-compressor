@@ -34,6 +34,7 @@ REPOSITORY_URL = "https://github.com/gitlares/fs-pdf-compressor"
 CONTRIBUTE_URL = f"{REPOSITORY_URL}/blob/main/CONTRIBUTING.md"
 DONATE_URL = "https://www.paypal.com/donate/?hosted_button_id=7RDCBR3QXXEMJ"
 DROP_ZONE_DEFAULTS_KEY = "DropZoneEnabled"
+KEEP_ORIGINAL_DEFAULTS_KEY = "KeepOriginalEnabled"
 SPARKLE_PROBE_LAST_CHECK_KEY = "SparkleLightweightProbeLastCheck"
 SPARKLE_PROBE_INTERVAL = 86_400.0
 SPARKLE_PROBE_TIMEOUT = 5.0
@@ -134,9 +135,16 @@ class PDFCompressorController(FN.NSObject):
         self.footer.addSubview_(self.status_label)
 
         self.keep_original = AK.NSButton.checkboxWithTitle_target_action_(
-            "Keep original", self, None
+            "Keep original", self, "toggleKeepOriginal:"
         )
         self.keep_original.setControlSize_(AK.NSControlSizeSmall)
+        self.keep_original.setState_(
+            AK.NSControlStateValueOn
+            if FN.NSUserDefaults.standardUserDefaults().boolForKey_(
+                KEEP_ORIGINAL_DEFAULTS_KEY
+            )
+            else AK.NSControlStateValueOff
+        )
         self.keep_original.setToolTip_(
             "Saves “name compressed.pdf” without modifying the original PDF."
         )
@@ -408,6 +416,12 @@ class PDFCompressorController(FN.NSObject):
         self.quality_index = sender.tag()
         self._update_quality_menu()
 
+    def toggleKeepOriginal_(self, sender):
+        FN.NSUserDefaults.standardUserDefaults().setBool_forKey_(
+            sender.state() == AK.NSControlStateValueOn,
+            KEEP_ORIGINAL_DEFAULTS_KEY,
+        )
+
 
 class AppDelegate(FN.NSObject):
     def init(self):
@@ -615,7 +629,7 @@ class AppDelegate(FN.NSObject):
             "Daniel Lares · July 22, 2026\n\n"
             "No warranty · GNU AGPL v3\n"
             "Source and contributions  ·  ♥ Support the project\n"
-            "Ghostscript 10.07.1"
+            "Ghostscript 10.08.0"
         )
         credits = FN.NSMutableAttributedString.alloc().initWithString_(text)
         full_range = FN.NSMakeRange(0, len(text))
@@ -638,7 +652,7 @@ class AppDelegate(FN.NSObject):
         links = {
             "Source and contributions": REPOSITORY_URL,
             "♥ Support the project": DONATE_URL,
-            "Ghostscript 10.07.1": "https://ghostscript.com/licensing/",
+            "Ghostscript 10.08.0": "https://ghostscript.com/licensing/",
             "GNU AGPL v3": "https://www.gnu.org/licenses/agpl-3.0.html",
         }
         for label, url in links.items():

@@ -183,7 +183,7 @@ delivery and links opened by the user; see the short
 ## License
 
 FS PDF Compressor is released under the GNU Affero General Public License v3.0
-or later. The distributed app bundles Ghostscript 10.07.1 under the AGPL and
+or later. The next release bundles Ghostscript 10.08.0 under the AGPL and
 other open-source libraries; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 Copyright © 2026 Daniel Lares.

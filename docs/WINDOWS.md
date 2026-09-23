@@ -48,7 +48,7 @@ Ghostscript is found automatically when installed at
 set `GHOSTSCRIPT_ROOT` to its `gs<version>` directory before running the build:
 
 ```powershell
-$env:GHOSTSCRIPT_ROOT = "D:\tools\gs\gs10.07.1"
+$env:GHOSTSCRIPT_ROOT = "D:\tools\gs\gs10.08.0"
 .windows-build-venv\Scripts\python build_windows.py
 ```
 

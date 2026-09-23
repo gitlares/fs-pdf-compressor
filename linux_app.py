@@ -101,6 +101,10 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
 
         self.keep_original = QtWidgets.QCheckBox("Keep original")
         self.keep_original.setToolTip("Saves “name compressed.pdf” without modifying the original PDF.")
+        self.keep_original.setChecked(
+            self.settings.value("keepOriginal", False, type=bool)
+        )
+        self.keep_original.toggled.connect(self._save_keep_original)
         footer_layout.addWidget(self.keep_original)
 
         self.progress = QtWidgets.QProgressBar()
@@ -202,6 +206,10 @@ class PDFCompressorWindow(QtWidgets.QMainWindow):
     def select_quality(self, index):
         self.quality_index = index
         self.update_quality_tooltip()
+
+    def _save_keep_original(self, enabled):
+        self.settings.setValue("keepOriginal", enabled)
+        self.settings.sync()
 
     def choose_files(self):
         paths, _ = QtWidgets.QFileDialog.getOpenFileNames(self, "Choose PDF files", str(Path.home()), "PDF files (*.pdf)")

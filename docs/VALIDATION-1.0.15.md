@@ -23,9 +23,16 @@ since 1.0.14 also removes local diagnostic log files.
   states using its packaged modules. It also launched under Xvfb and produced
   a PDF that Ghostscript rendered successfully. The remote session could not
   confirm host-trash recovery because its desktop portal was unavailable.
+- The Windows Server 2022 candidate workflow passed its regression and
+  compression smoke tests, built the per-user installer and portable ZIP, and
+  verified their packaged compliance files. The manifest records app 1.0.15,
+  Ghostscript 10.08.0, Python 3.12.10, PySide6 6.8.3 and the exact source
+  commit `0858274bed8a88631e8a92f7f657f9bf59bfd1b2`.
 - Package checksums:
   - AppImage: `429b9ddc152ed7648f09ee65c4a6a9888bdb1c1c1b5c9e9f0b18f4c1299acecf`
   - Snap: `ea7e2e5b02f05ad220a5979fa92477a209cf41f26e989223f49e93a3bdb5d175`
+  - Windows installer: `267dd13fb553cbbff11520c87ec1e5ff3ad0bbe5e972be010ba7a166cb891af7`
+  - Windows portable ZIP: `82c4d73468cf52cbeb8d837df5b056420dc54a7cd6598e662e2a2ae4f0f3fea8`
 - The official Ghostscript 10.08.0 source archive matched its pinned SHA-256.
 - The sample from issue #9 still rendered incorrectly in macOS PDFKit with
   Ghostscript 10.08.0. The engine upgrade is not a fix for that issue.
@@ -35,8 +42,9 @@ since 1.0.14 also removes local diagnostic log files.
 - Build the macOS 14 candidate, audit every Mach-O deployment target, launch
   the app, test all three compression profiles and both Keep original states,
   then sign, notarize, staple, and assess the final DMG.
-- Build the Windows installer and portable ZIP, verify checksums and the
-  embedded Ghostscript version, then test on Windows 11 x64.
+- Install the Windows candidate on Windows 11 x64 and test Explorer
+  integration, Drop Zone, all profiles, both Keep original states, update
+  link and Recycle Bin behavior.
 - Open the AppImage and Snap in an interactive Linux desktop session and check
   file picker, drag and drop, Wayland, removable media and host-trash recovery.
 - On every platform, confirm that Keep original defaults to off on a fresh

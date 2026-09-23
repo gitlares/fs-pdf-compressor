@@ -45,7 +45,10 @@ QUICK_ACTION = APP / "Contents" / "PlugIns" / f"{QUICK_ACTION_NAME}.appex"
 QUICK_ACTION_SOURCE = ROOT / "macos_quick_action" / "ActionRequestHandler.m"
 QUICK_ACTION_ENTITLEMENTS = ROOT / "macos_quick_action" / "QuickAction.entitlements"
 DMG_NAME = f"FS-PDF-Compressor-{APP_VERSION}-arm64.dmg"
-GHOSTSCRIPT_PREFIX = Path("/opt/homebrew/opt/ghostscript").resolve()
+GHOSTSCRIPT_PREFIX = Path(
+    os.environ.get("GHOSTSCRIPT_ROOT", "/opt/homebrew/opt/ghostscript")
+).resolve()
+CUSTOM_GHOSTSCRIPT_ROOT = "GHOSTSCRIPT_ROOT" in os.environ
 GHOSTSCRIPT_VERSION = "10.08.0"
 COMPATIBILITY_GHOSTSCRIPT_APP = os.environ.get("MACOS_GHOSTSCRIPT_SOURCE_APP")
 SIGNING_IDENTITY = os.environ.get("MACOS_SIGNING_IDENTITY", "-")
@@ -256,12 +259,22 @@ def bundle_ghostscript() -> None:
     frameworks.mkdir(parents=True)
     shutil.copy2(source_gs, resources / "bin" / "gs")
     source_resources = GHOSTSCRIPT_PREFIX / "share" / "ghostscript"
+    versioned_resources = source_resources / GHOSTSCRIPT_VERSION
+    if versioned_resources.is_dir():
+        source_resources = versioned_resources
     destination_resources = resources / "share" / "ghostscript"
     # Homebrew includes a `10.xx -> .` compatibility symlink. Copying the whole
     # directory while dereferencing it loops forever, so copy the real folders.
     for name in ("Resource", "fonts", "iccprofiles", "lib"):
-        shutil.copytree(source_resources / name, destination_resources / name)
-    shutil.copy2(GHOSTSCRIPT_PREFIX / "LICENSE", resources / "GHOSTSCRIPT-LICENSE.txt")
+        source = source_resources / name
+        if source.is_dir():
+            shutil.copytree(source, destination_resources / name)
+    if not (destination_resources / "lib").is_dir():
+        raise RuntimeError("The Ghostscript auxiliary lib directory is missing")
+    _copy_required_license(
+        resources / "GHOSTSCRIPT-LICENSE.txt",
+        [GHOSTSCRIPT_PREFIX / "LICENSE", GHOSTSCRIPT_PREFIX / "COPYING"],
+    )
 
     pending = [source_gs.resolve()]
     copied: dict[Path, Path] = {}
@@ -309,6 +322,14 @@ def bundle_homebrew_licenses() -> None:
     formulae = ["ghostscript", *result.stdout.splitlines()]
     destination_root = APP / "Contents" / "Resources" / "third-party-licenses"
     destination_root.mkdir(parents=True, exist_ok=True)
+    if CUSTOM_GHOSTSCRIPT_ROOT:
+        ghostscript_destination = destination_root / "ghostscript"
+        ghostscript_destination.mkdir()
+        _copy_required_license(
+            ghostscript_destination / "AGPL-3.0.txt",
+            [GHOSTSCRIPT_PREFIX / "LICENSE", GHOSTSCRIPT_PREFIX / "COPYING"],
+        )
+        formulae.remove("ghostscript")
     patterns = ("LICENSE*", "COPYING*", "NOTICE*", "COPYRIGHT*")
 
     for formula in formulae:
@@ -411,6 +432,8 @@ def write_compliance_manifest(python_runtime: dict[str, str]) -> None:
             capture_output=True,
         )
         formulae.extend(result.stdout.splitlines())
+        if CUSTOM_GHOSTSCRIPT_ROOT:
+            formulae.remove("ghostscript")
         formula_info = subprocess.run(
             ["brew", "info", "--json=v2", *formulae],
             check=True,
@@ -427,6 +450,18 @@ def write_compliance_manifest(python_runtime: dict[str, str]) -> None:
                     "version": formula.get("versions", {}).get("stable"),
                     "license": formula.get("license"),
                     "source_url": stable.get("url"),
+                }
+            )
+        if CUSTOM_GHOSTSCRIPT_ROOT:
+            homebrew.append(
+                {
+                    "name": "ghostscript",
+                    "version": GHOSTSCRIPT_VERSION,
+                    "license": "AGPL-3.0-or-later",
+                    "source_url": (
+                        "https://github.com/ArtifexSoftware/ghostpdl-downloads/"
+                        "releases/download/gs10080/ghostscript-10.08.0.tar.xz"
+                    ),
                 }
             )
 

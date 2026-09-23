@@ -43,7 +43,7 @@ jobs:
           ./configure --prefix="$prefix" --disable-cups --disable-fontconfig --without-x
           make -j "$(sysctl -n hw.ncpu)"
           make install
-          cp COPYING "$prefix/LICENSE"
+          cp doc/COPYING "$prefix/LICENSE"
           test "$("$prefix/bin/gs" --version)" = "10.08.0"
           echo "GHOSTSCRIPT_ROOT=$prefix" >> "$GITHUB_ENV"
       - name: Assemble unsigned candidate

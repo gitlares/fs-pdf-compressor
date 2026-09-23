@@ -2,6 +2,9 @@
 
 ## 1.0.15 — 2026-09-23
 
+- Publish matching 1.0.15 builds as a Developer ID signed and Apple-notarized
+  macOS DMG, Windows installer and portable ZIP, Linux AppImage, and Snap Store
+  revision 7 in the stable channel.
 - Update bundled Ghostscript to 10.08.0 in the macOS, Windows, AppImage,
   and Snap build recipes. The PDF appearance issue remains open because the
   affected sample still renders incorrectly in macOS Preview/PDFKit.

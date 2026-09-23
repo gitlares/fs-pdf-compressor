@@ -1,7 +1,7 @@
 const fallback = {
-  version: "v1.0.14",
-  macosUrl: "https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.14/FS-PDF-Compressor-1.0.14-arm64.dmg",
-  windowsUrl: "https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.14/FS-PDF-Compressor-1.0.14-windows-x86_64-setup.exe",
+  version: "v1.0.15",
+  macosUrl: "https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.15/FS-PDF-Compressor-1.0.15-arm64.dmg",
+  windowsUrl: "https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.15/FS-PDF-Compressor-1.0.15-windows-x86_64-setup.exe",
   linuxUrl: "https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-x86_64.AppImage",
 };
 

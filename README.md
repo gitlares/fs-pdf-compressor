@@ -36,7 +36,8 @@ Linux, with a self-contained AppImage for Linux users and a Windows x64 installe
 - Send selected PDFs from Finder, Windows Explorer, GNOME Files, or KDE Dolphin.
 - Balanced compression by default, with two optional quality profiles.
 - Replaces the original only when the result is smaller.
-- Optional **Keep original** mode creates a separate compressed copy.
+- Optional **Keep original** mode creates a separate compressed copy and
+  remembers your choice between app launches.
 - Processes everything locally: no uploads, accounts, analytics or telemetry.
 - Includes Ghostscript, so end users do not need Homebrew or a separate install.
 - macOS distribution is Developer ID signed and notarized by Apple.
@@ -86,7 +87,7 @@ no document is uploaded.
 ## Download
 
 - **macOS 14+ on Apple Silicon:** [download the signed and notarized DMG](https://github.com/gitlares/fs-pdf-compressor/releases/latest).
-- **Linux x86_64:** [download the self-contained AppImage](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-x86_64.AppImage).
+- **Linux x86_64:** [install from the Snap Store](https://snapcraft.io/fs-pdf-compressor) for automatic updates, or [download the self-contained AppImage](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-x86_64.AppImage).
 - **Windows 11 x64:** [download the per-user installer](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-1.0.15-windows-x86_64-setup.exe) or the [portable ZIP](https://github.com/gitlares/fs-pdf-compressor/releases/latest/download/FS-PDF-Compressor-1.0.15-windows-x86_64.zip).
 
 The macOS build is Developer ID signed and Apple-notarized, so it opens
@@ -106,6 +107,9 @@ The Windows installer includes its dependencies and needs no administrator
 rights. It is currently unsigned, so verify the matching published SHA-256
 checksum before installing it. Windows updates are manual for now: download a
 new installer from the official GitHub release when one is published.
+
+See [what changed in 1.0.15](docs/releases/1.0.15.md) or read the complete
+[changelog](CHANGELOG.md).
 
 ## Build from source
 
@@ -183,7 +187,7 @@ delivery and links opened by the user; see the short
 ## License
 
 FS PDF Compressor is released under the GNU Affero General Public License v3.0
-or later. The next release bundles Ghostscript 10.08.0 under the AGPL and
+or later. Version 1.0.15 bundles Ghostscript 10.08.0 under the AGPL and
 other open-source libraries; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 Copyright © 2026 Daniel Lares.

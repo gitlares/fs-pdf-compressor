@@ -40,7 +40,7 @@ jobs:
           echo "c20492bc8ebb96c87fa2e52a0926e1cda8cde95d66145e018ac713fed5da38cf  $archive" | shasum -a 256 --check
           tar -xf "$archive" -C "$RUNNER_TEMP"
           cd "$source_dir"
-          ./configure --prefix="$prefix" --disable-cups --without-x
+          ./configure --prefix="$prefix" --disable-cups --disable-fontconfig --without-x
           make -j "$(sysctl -n hw.ncpu)"
           make install
           cp COPYING "$prefix/LICENSE"

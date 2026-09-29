@@ -13,7 +13,7 @@
             <sparkle:shortVersionString>1.0.16</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.16/FS-PDF-Compressor-1.0.16-arm64.zip" length="35252034" type="application/octet-stream" sparkle:edSignature="Rj1/kf4TzAWC02fuNONdYyZBu1Cm2/FxxYuYwnr7lHramHc/LsoQhWhfHDiFfGIUXrwZdV20YRhUPfpHkv30AA=="/>
+            <enclosure url="https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.16/FS-PDF-Compressor-1.0.16-arm64.zip" length="35251934" type="application/octet-stream" sparkle:edSignature="Vsr0hbOyxP+4wIlsCoMzt9Us+DprcScldtNXRLvJuqDJ+PTZ2xFBWAef3Tvn5sGxIC/hDMvLD11VduoV080NCA=="/>
         </item>
         <item>
             <title>1.0.15</title>

@@ -7,7 +7,7 @@ the macOS and Linux editions. It is distributed under AGPL-3.0-or-later.
 ## Install the public build
 
 For Windows 11 x64, download the per-user installer or portable ZIP from the
-[1.0.15 release](https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.15).
+[1.0.16 release](https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.16).
 Each artifact has a matching SHA-256 file. The installer includes the
 unmodified AGPL Ghostscript runtime and needs no administrator rights.
 
@@ -48,7 +48,7 @@ Ghostscript is found automatically when installed at
 set `GHOSTSCRIPT_ROOT` to its `gs<version>` directory before running the build:
 
 ```powershell
-$env:GHOSTSCRIPT_ROOT = "D:\tools\gs\gs10.08.0"
+$env:GHOSTSCRIPT_ROOT = "D:\tools\gs\gs10.07.1"
 .windows-build-venv\Scripts\python build_windows.py
 ```
 

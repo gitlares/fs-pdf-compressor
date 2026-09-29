@@ -629,7 +629,7 @@ class AppDelegate(FN.NSObject):
             "Daniel Lares · July 22, 2026\n\n"
             "No warranty · GNU AGPL v3\n"
             "Source and contributions  ·  ♥ Support the project\n"
-            "Ghostscript 10.08.0"
+            "Ghostscript 10.07.1"
         )
         credits = FN.NSMutableAttributedString.alloc().initWithString_(text)
         full_range = FN.NSMakeRange(0, len(text))
@@ -652,7 +652,7 @@ class AppDelegate(FN.NSObject):
         links = {
             "Source and contributions": REPOSITORY_URL,
             "♥ Support the project": DONATE_URL,
-            "Ghostscript 10.08.0": "https://ghostscript.com/licensing/",
+            "Ghostscript 10.07.1": "https://ghostscript.com/licensing/",
             "GNU AGPL v3": "https://www.gnu.org/licenses/agpl-3.0.html",
         }
         for label, url in links.items():

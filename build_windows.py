@@ -29,7 +29,7 @@ BUILD = ROOT / ".windows-build"
 APP_NAME = "FS PDF Compressor"
 from fs_pdf_compressor.version import APP_VERSION
 ARCHITECTURE = "x86_64"
-GHOSTSCRIPT_VERSION = "10.08.0"
+GHOSTSCRIPT_VERSION = "10.07.1"
 PACKAGE_NAME = f"FS-PDF-Compressor-{APP_VERSION}-windows-{ARCHITECTURE}"
 
 

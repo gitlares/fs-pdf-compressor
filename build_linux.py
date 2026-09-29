@@ -30,7 +30,7 @@ BUILD = ROOT / ".linux-build"
 APP_NAME = "FS PDF Compressor"
 from fs_pdf_compressor.version import APP_VERSION
 ARCHITECTURE = "x86_64"
-GHOSTSCRIPT_VERSION = "10.08.0"
+GHOSTSCRIPT_VERSION = "10.07.1"
 APPDIR = BUILD / "AppDir"
 APPIMAGE_NAME = f"FS-PDF-Compressor-{ARCHITECTURE}.AppImage"
 UPDATE_INFORMATION = (
@@ -75,9 +75,8 @@ def require_linux_x86_64() -> None:
 def ghostscript_data_dir() -> Path:
     prefix = Path(os.environ.get("GHOSTSCRIPT_ROOT", "/usr"))
     candidate = prefix / "share" / "ghostscript" / GHOSTSCRIPT_VERSION
-    # Ghostscript 10.08.0 compiles its initialization resources into the
-    # executable, so source builds install the auxiliary `lib` directory but
-    # no longer necessarily install `Resource/Init`.
+    # The pinned Ghostscript build installs its auxiliary resources under the
+    # versioned share directory.
     if not (candidate / "lib").is_dir():
         raise RuntimeError(f"Ghostscript {GHOSTSCRIPT_VERSION} resources were not found")
     return candidate
@@ -142,7 +141,7 @@ def bundle_ghostscript(pyinstaller_resources: Path) -> None:
     (destination / "SOURCE_OFFER.md").write_text(
         "Ghostscript is distributed under GNU AGPL-3.0-or-later.\n"
         "Corresponding source: https://github.com/ArtifexSoftware/ghostpdl-downloads/"
-        "releases/download/gs10080/ghostscript-10.08.0.tar.xz\n",
+        "releases/download/gs10071/ghostscript-10.07.1.tar.xz\n",
         encoding="utf-8",
     )
 
@@ -216,7 +215,7 @@ def bundle_compliance_documents() -> None:
         f"{ROOT.name} source ref `{os.environ.get('SOURCE_REF', f'v{APP_VERSION}')}`.\n\n"
         "Application source: https://github.com/gitlares/fs-pdf-compressor\n"
         "Ghostscript source: https://github.com/ArtifexSoftware/ghostpdl-downloads/"
-        "releases/download/gs10080/ghostscript-10.08.0.tar.xz\n"
+        "releases/download/gs10071/ghostscript-10.07.1.tar.xz\n"
         "PySide6 source: https://code.qt.io/pyside/pyside-setup\n"
         "PyInstaller source: https://github.com/pyinstaller/pyinstaller\n",
         encoding="utf-8",

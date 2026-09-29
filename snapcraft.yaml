@@ -1,6 +1,6 @@
 name: fs-pdf-compressor
 title: FS PDF Compressor
-version: "1.0.15"
+version: "1.0.16"
 summary: Fast and simple local PDF compression
 description: |
   Compress PDF files locally with Ghostscript. Drag in one or more PDFs (or a
@@ -18,8 +18,8 @@ website: https://gitlares.github.io/fs-pdf-compressor/
 source-code: https://github.com/gitlares/fs-pdf-compressor
 icon: assets/PDFCompresor.png
 # Expose Ghostscript's bundled support files and fonts inside the Snap mount
-# namespace, never the host. Ghostscript 10.08.0 compiles its initialization
-# resources into the executable and still installs auxiliary files under lib.
+# namespace, never the host. Ghostscript installs its initialization resources
+# and auxiliary files under the versioned share directory.
 layout:
   /usr/share/ghostscript:
     bind: $SNAP/usr/share/ghostscript
@@ -46,8 +46,8 @@ apps:
 parts:
   ghostscript:
     plugin: autotools
-    source: https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10080/ghostscript-10.08.0.tar.xz
-    source-checksum: sha256/c20492bc8ebb96c87fa2e52a0926e1cda8cde95d66145e018ac713fed5da38cf
+    source: https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10071/ghostscript-10.07.1.tar.xz
+    source-checksum: sha256/1cdb766de8db8f1e589c817f09c5855ea5f65dfc8540e465a69ac14c18416025
     autotools-configure-parameters:
       - --prefix=/usr
   fs-pdf-compressor:
@@ -106,7 +106,7 @@ parts:
       install -Dm0644 LICENSE "$app_root/licenses/FS-PDF-Compressor-AGPL-3.0.txt"
       install -Dm0644 THIRD_PARTY_NOTICES.md "$app_root/licenses/THIRD_PARTY_NOTICES.md"
       test -f "$CRAFT_STAGE/usr/bin/gs"
-      test -d "$CRAFT_STAGE/usr/share/ghostscript/10.08.0/lib"
+      test -d "$CRAFT_STAGE/usr/share/ghostscript/10.07.1/lib"
       printf '%s\n' "$CRAFT_PROJECT_VERSION" > "$app_root/VERSION"
       install -Dm0755 snap/fs-pdf-compressor "$CRAFT_PART_INSTALL/bin/fs-pdf-compressor"
       install -Dm0644 snap/gui/fs-pdf-compressor.desktop \

@@ -10,9 +10,8 @@ versions and their upstream source locations.
 
 ## Ghostscript and jbig2dec
 
-FS PDF Compressor 1.0.15 bundles Ghostscript 10.08.0. The macOS build obtains
-it from Homebrew; Windows uses the official runtime; Linux builds use the
-official source archive.
+FS PDF Compressor 1.0.16 bundles Ghostscript 10.07.1. The macOS and Linux
+builds compile the official source archive; Windows uses the official runtime.
 Ghostscript is licensed under the GNU Affero General Public License, version 3
 (AGPL-3.0), unless an Artifex commercial license has been acquired.
 
@@ -21,8 +20,8 @@ The Ghostscript copyright notice and the complete AGPL-3.0 text are included at:
 - `Contents/Resources/ghostscript/GHOSTSCRIPT-LICENSE.txt`
 - `Contents/Resources/ghostscript/AGPL-3.0.txt`
 
-The exact corresponding source for Ghostscript 10.08.0 is available from:
-https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10080/ghostpdl-10.08.0.tar.xz
+The exact corresponding source for Ghostscript 10.07.1 is available from:
+https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10071/ghostscript-10.07.1.tar.xz
 
 The bundled jbig2dec runtime is also AGPL-3.0-or-later. Its corresponding
 source is listed in the release's `THIRD_PARTY_MANIFEST.json` (the current

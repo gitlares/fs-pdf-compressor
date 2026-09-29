@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.16 — 2026-09-29
+
+- Restore Ghostscript 10.07.1 on macOS, Windows, AppImage, and Snap after a
+  Ghostscript 10.08.0 `pdfwrite` regression was found to remove a text-clipping
+  operation from some Photoshop-generated PDFs and cover their visible content.
+- Keep the existing three compression profiles, interface, local-only workflow,
+  file replacement rules, and saved Keep original preference unchanged.
+- Verify the reported Photoshop PDF locally with all three profiles before
+  publishing the corrected cross-platform packages.
+
 ## 1.0.15 — 2026-09-23
 
 - Publish matching 1.0.15 builds as a Developer ID signed and Apple-notarized

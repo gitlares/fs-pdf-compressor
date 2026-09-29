@@ -6,7 +6,7 @@ on:
       version:
         description: Version matching the checked-out source
         required: true
-        default: "1.0.15"
+        default: "1.0.16"
 
 permissions:
   contents: read
@@ -29,22 +29,22 @@ jobs:
           python3.12 -m venv .build-venv
           .build-venv/bin/python -m pip install --upgrade pip
           .build-venv/bin/python -m pip install -r requirements-build.txt
-      - name: Build pinned Ghostscript 10.08.0
+      - name: Build pinned Ghostscript 10.07.1
         run: |
-          archive="$RUNNER_TEMP/ghostscript-10.08.0.tar.xz"
-          source_dir="$RUNNER_TEMP/ghostscript-10.08.0"
-          prefix="$RUNNER_TEMP/ghostscript-10.08.0-install"
+          archive="$RUNNER_TEMP/ghostscript-10.07.1.tar.xz"
+          source_dir="$RUNNER_TEMP/ghostscript-10.07.1"
+          prefix="$RUNNER_TEMP/ghostscript-10.07.1-install"
           curl --fail --location --retry 3 \
             --output "$archive" \
-            https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10080/ghostscript-10.08.0.tar.xz
-          echo "c20492bc8ebb96c87fa2e52a0926e1cda8cde95d66145e018ac713fed5da38cf  $archive" | shasum -a 256 --check
+            https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10071/ghostscript-10.07.1.tar.xz
+          echo "1cdb766de8db8f1e589c817f09c5855ea5f65dfc8540e465a69ac14c18416025  $archive" | shasum -a 256 --check
           tar -xf "$archive" -C "$RUNNER_TEMP"
           cd "$source_dir"
           ./configure --prefix="$prefix" --disable-cups --disable-fontconfig --without-x
           make -j "$(sysctl -n hw.ncpu)"
           make install
           cp doc/COPYING "$prefix/LICENSE"
-          test "$("$prefix/bin/gs" --version)" = "10.08.0"
+          test "$("$prefix/bin/gs" --version)" = "10.07.1"
           echo "GHOSTSCRIPT_ROOT=$prefix" >> "$GITHUB_ENV"
       - name: Assemble unsigned candidate
         run: |

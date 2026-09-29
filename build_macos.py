@@ -49,7 +49,7 @@ GHOSTSCRIPT_PREFIX = Path(
     os.environ.get("GHOSTSCRIPT_ROOT", "/opt/homebrew/opt/ghostscript")
 ).resolve()
 CUSTOM_GHOSTSCRIPT_ROOT = "GHOSTSCRIPT_ROOT" in os.environ
-GHOSTSCRIPT_VERSION = "10.08.0"
+GHOSTSCRIPT_VERSION = "10.07.1"
 COMPATIBILITY_GHOSTSCRIPT_APP = os.environ.get("MACOS_GHOSTSCRIPT_SOURCE_APP")
 SIGNING_IDENTITY = os.environ.get("MACOS_SIGNING_IDENTITY", "-")
 SIGNING_KEYCHAIN = os.environ.get("MACOS_SIGNING_KEYCHAIN")
@@ -460,7 +460,7 @@ def write_compliance_manifest(python_runtime: dict[str, str]) -> None:
                     "license": "AGPL-3.0-or-later",
                     "source_url": (
                         "https://github.com/ArtifexSoftware/ghostpdl-downloads/"
-                        "releases/download/gs10080/ghostscript-10.08.0.tar.xz"
+                        "releases/download/gs10071/ghostscript-10.07.1.tar.xz"
                     ),
                 }
             )

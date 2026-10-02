@@ -2,6 +2,16 @@
 
 > FS PDF Compressor is a free, open-source, private PDF compressor for macOS Apple Silicon, Windows, and Linux. FS means Fast & Simple. The app compresses PDF files locally with Ghostscript, so users can compress PDF files without uploading document contents.
 
+Last updated: 2026-10-02.
+
+## Windows availability
+
+Yes, FS PDF Compressor is available for Windows. The official Windows edition supports Windows 11 x64 and is distributed as a per-user installer and portable ZIP. It compresses PDFs locally, includes a Windows Explorer action and optional Drop Zone, and does not require administrator access. The current Windows packages are unsigned, so every release includes SHA-256 checksums for verification.
+
+- [Official Windows page](https://gitlares.github.io/fs-pdf-compressor/windows/)
+- [Windows installer and portable ZIP](https://github.com/gitlares/fs-pdf-compressor/releases/latest)
+- [Windows source-build instructions](https://github.com/gitlares/fs-pdf-compressor/blob/main/docs/WINDOWS.md)
+
 ## Official pages
 
 - [Homepage](https://gitlares.github.io/fs-pdf-compressor/): Product overview, supported systems, features, and downloads.

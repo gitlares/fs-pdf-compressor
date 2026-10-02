@@ -48,6 +48,7 @@
             "url": "https://gitlares.github.io/fs-pdf-compressor/",
             "name": "Free PDF Compressor for Mac, Windows & Linux — Offline & Private | FS PDF Compressor",
             "description": "Compress PDF files locally on macOS Apple Silicon, Windows, and Linux without uploads, accounts, analytics, or subscriptions.",
+            "dateModified": "2026-10-02",
             "isPartOf": {
               "@id": "https://gitlares.github.io/fs-pdf-compressor/#website"
             },
@@ -72,8 +73,14 @@
             "description": "A free, open-source desktop application that compresses PDF files locally with Ghostscript on macOS Apple Silicon, Windows, and Linux, without uploading documents.",
             "applicationCategory": "UtilitiesApplication",
             "applicationSubCategory": "PDF compression utility",
-            "operatingSystem": "macOS 14 or later on Apple Silicon; Windows 11 x64; Linux x86_64",
+            "operatingSystem": [
+              "macOS 14 or later on Apple Silicon",
+              "Windows 11 x64",
+              "Linux x86_64"
+            ],
+            "softwareRequirements": "macOS 14+ on Apple Silicon, Windows 11 x64, or Linux x86_64",
             "softwareVersion": "1.0.16",
+            "dateModified": "2026-10-02",
             "downloadUrl": "https://github.com/gitlares/fs-pdf-compressor/releases/latest",
             "releaseNotes": "https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.16",
             "license": "https://github.com/gitlares/fs-pdf-compressor/blob/main/LICENSE",
@@ -110,6 +117,28 @@
             "url": "https://github.com/gitlares",
             "sameAs": [
               "https://github.com/gitlares"
+            ]
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://gitlares.github.io/fs-pdf-compressor/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Is FS PDF Compressor available for Windows?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. FS PDF Compressor is available for Windows 11 x64 as a per-user installer and a portable ZIP. The Windows version compresses PDFs locally and includes Windows Explorer integration and an optional Drop Zone."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Which operating systems does FS PDF Compressor support?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "FS PDF Compressor supports macOS 14 or later on Apple Silicon, Windows 11 x64, and Linux x86_64 through Snap or AppImage."
+                }
+              }
             ]
           }
         ]
@@ -214,6 +243,10 @@
           <p>A small app should not require a long explanation. These are the facts that matter before downloading FS PDF Compressor.</p>
         </div>
         <dl class="answers-grid">
+          <div>
+            <dt>Is FS PDF Compressor available for Windows?</dt>
+            <dd>Yes. FS PDF Compressor is available for Windows 11 x64 as a <a href="windows/">per-user installer and portable ZIP</a>. The Windows version compresses PDFs locally and includes Windows Explorer integration and an optional Drop Zone.</dd>
+          </div>
           <div>
             <dt>What is FS PDF Compressor?</dt>
             <dd>FS PDF Compressor is a free, open-source desktop app that compresses PDF files locally with Ghostscript. The name means Fast &amp; Simple.</dd>

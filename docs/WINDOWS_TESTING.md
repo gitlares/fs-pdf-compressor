@@ -72,3 +72,20 @@ versions and a test feed signed with the embedded verification key:
 See [signed Windows updates](RELEASING.md#windows-signed-updates) for feed
 generation. The Ed25519 update signature does not replace Authenticode; the
 Windows installer remains unsigned unless separately code-signed.
+
+## Automated validation recorded on 2026-10-08
+
+[GitHub Actions run 37840732060](https://github.com/gitlares/fs-pdf-compressor/actions/runs/37840732060)
+passed for source commit `851db786106137e7a1424ca00553750114611813` on
+Windows Server 2022. It built the Windows 1.0.16.1 installer and portable ZIP,
+verified package contents, used the real WinSparkle DLL to authenticate a
+download and reject a tampered payload, checked an empty update feed, upgraded
+the published 1.0.16 installer using the native-verified payload, verified
+preserved preferences and Explorer registration, and checked installed
+application startup. See the [permanent result](validation/windows-1.0.16.1-ci.json).
+
+The native download test used a disposable signing key and a loopback feed.
+It did not use the production signing key or publish an update. Unattended
+installation and process startup do not replace visual review of the update
+approval dialog, relaunch, actual Explorer action, drag/drop, or Windows 11
+desktop behavior. Those checks remain pending before a public release.

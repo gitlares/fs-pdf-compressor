@@ -1,0 +1,24 @@
+{
+  "observed_date": "2026-10-08",
+  "runner": "windows-2022 (Windows Server 2022)",
+  "source_commit": "851db786106137e7a1424ca00553750114611813",
+  "run_url": "https://github.com/gitlares/fs-pdf-compressor/actions/runs/37840732060",
+  "version": "1.0.16.1",
+  "previous_version": "1.0.16",
+  "build": "passed",
+  "package_contents": "passed",
+  "native_signed_download": true,
+  "native_tamper_rejection": true,
+  "native_no_update": true,
+  "silent_upgrade": true,
+  "preferences_preserved": true,
+  "explorer_integration": true,
+  "installed_app_launch": true,
+  "production_release_published": false,
+  "limitations": [
+    "Native download verification used a disposable test signing identity and loopback feed, not the production signing key/feed.",
+    "The exact native-verified installer payload was installed unattended; the update approval dialog was not manually reviewed.",
+    "Installer relaunch UI, drag/drop, Windows 11 desktop behavior, and an actual Explorer action were not visually reviewed.",
+    "Preserved preferences and Explorer registration were verified in the registry; startup was checked by process survival."
+  ]
+}

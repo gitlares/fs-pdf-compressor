@@ -13,6 +13,11 @@
 - Keep the shared macOS/Linux version at 1.0.16 and Ghostscript at 10.07.1.
   The Windows revision requires Windows 11 end-to-end testing before release;
   existing Windows users need one manual update to gain WinSparkle support.
+- Verify the Windows installer and native signed-download/tamper-rejection
+  paths in a disposable Windows Server 2022 GitHub Actions runner. Record
+  successful upgrade from 1.0.16, preserved preferences and Explorer registry
+  integration, and installed application startup. Windows 11 visual checks
+  and production release publication remain pending.
 
 ## 1.0.16 — 2026-09-29
 

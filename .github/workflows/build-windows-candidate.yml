@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version matching the checked-out source
+        description: Windows version matching WINDOWS_APP_VERSION in the checked-out source
         required: true
 
 permissions:
@@ -82,7 +82,9 @@ jobs:
             "$app\ghostscript\bin\gswin64c.exe",
             "$app\ghostscript\AGPL-3.0.txt",
             "$app\SOURCE_OFFER.md",
-            "$app\THIRD_PARTY_MANIFEST.json"
+            "$app\THIRD_PARTY_MANIFEST.json",
+            "$app\WinSparkle.dll",
+            "$app\licenses\winsparkle\COPYING"
           ) | ForEach-Object { if (-not (Test-Path $_)) { throw "Missing runtime compliance file: $_" } }
 
       - name: Upload Windows release candidate

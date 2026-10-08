@@ -105,7 +105,7 @@ user-writable location so in-app updates can replace it safely.
 
 The Windows installer includes its dependencies and needs no administrator
 rights. It is currently unsigned, so verify the matching published SHA-256
-checksum before installing it. Windows updates are manual for now: download a
+checksum before installing it. Windows updates in the published 1.0.16 release are manual: download a
 new installer from the official GitHub release when one is published.
 
 See [what changed in 1.0.16](docs/releases/1.0.16.md) or read the complete

@@ -19,6 +19,8 @@ import re
 import shutil
 import subprocess
 import sys
+import urllib.request
+import zipfile
 from importlib.metadata import version as package_version, distribution
 from pathlib import Path
 
@@ -27,10 +29,35 @@ ROOT = Path(__file__).resolve().parent
 DIST = ROOT / os.environ.get("DIST_DIR", "release-windows")
 BUILD = ROOT / ".windows-build"
 APP_NAME = "FS PDF Compressor"
-from fs_pdf_compressor.version import APP_VERSION
+from fs_pdf_compressor.version import WINDOWS_APP_VERSION as APP_VERSION
+from fs_pdf_compressor.windows_update import WINSPARKLE_VERSION
 ARCHITECTURE = "x86_64"
 GHOSTSCRIPT_VERSION = "10.07.1"
 PACKAGE_NAME = f"FS-PDF-Compressor-{APP_VERSION}-windows-{ARCHITECTURE}"
+WINSPARKLE_SHA256 = "6037df37fc263bd1650a1c4949681a9d40ffe991d01f35892a406cb5d103c976"
+
+
+def bundle_winsparkle(resources: Path) -> None:
+    """Download a pinned official archive and copy only the x64 runtime."""
+    cache = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / ".cache"))) / APP_NAME
+    cache.mkdir(parents=True, exist_ok=True)
+    archive = cache / f"WinSparkle-{WINSPARKLE_VERSION}.zip"
+    if not archive.is_file():
+        url = f"https://github.com/vslavik/winsparkle/releases/download/v{WINSPARKLE_VERSION}/{archive.name}"
+        request = urllib.request.Request(url, headers={"User-Agent": "FS-PDF-Compressor-build"})
+        with urllib.request.urlopen(request, timeout=60) as response:
+            archive.write_bytes(response.read())
+    if hashlib.sha256(archive.read_bytes()).hexdigest() != WINSPARKLE_SHA256:
+        archive.unlink()
+        raise RuntimeError("WinSparkle archive checksum did not match")
+    with zipfile.ZipFile(archive) as source:
+        prefix = f"WinSparkle-{WINSPARKLE_VERSION}/"
+        resources.mkdir(parents=True, exist_ok=True)
+        (resources / "WinSparkle.dll").write_bytes(source.read(prefix + "x64/Release/WinSparkle.dll"))
+        licenses = resources / "licenses" / "winsparkle"
+        licenses.mkdir(parents=True, exist_ok=True)
+        for name in ("COPYING", "COPYING.expat"):
+            (licenses / name).write_bytes(source.read(prefix + name))
 
 
 def run(*args: str) -> None:
@@ -154,7 +181,8 @@ def bundle_compliance_documents(resources: Path, ghostscript_version_value: str)
         f"https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/{source_tag}/"
         f"ghostpdl-{ghostscript_version_value}.tar.xz\n"
         "PySide6 source: https://code.qt.io/pyside/pyside-setup\n"
-        "PyInstaller source: https://github.com/pyinstaller/pyinstaller\n",
+        "PyInstaller source: https://github.com/pyinstaller/pyinstaller\n"
+        f"WinSparkle {WINSPARKLE_VERSION} source: https://github.com/vslavik/winsparkle/tree/v{WINSPARKLE_VERSION}\n",
         encoding="utf-8",
     )
     (resources / "THIRD_PARTY_MANIFEST.json").write_text(
@@ -169,6 +197,9 @@ def bundle_compliance_documents(resources: Path, ghostscript_version_value: str)
                 "ghostscript": ghostscript_version_value,
                 "ghostscript_license": "AGPL-3.0-or-later",
                 "ghostscript_modified": False,
+                "winsparkle": WINSPARKLE_VERSION,
+                "winsparkle_license": "MIT",
+                "winsparkle_source": f"https://github.com/vslavik/winsparkle/tree/v{WINSPARKLE_VERSION}",
             },
             indent=2,
             sort_keys=True,
@@ -216,6 +247,7 @@ def main() -> None:
     )
     application = ROOT / "dist" / APP_NAME
     resources = application / "_internal"
+    bundle_winsparkle(resources)
     _, bundled_ghostscript_version = bundle_ghostscript(resources)
     bundle_compliance_documents(resources, bundled_ghostscript_version)
     archive_base = DIST / PACKAGE_NAME

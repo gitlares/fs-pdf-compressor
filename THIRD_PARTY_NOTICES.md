@@ -55,6 +55,11 @@ The application and bundled Ghostscript remain available under AGPL-3.0-or-later
 
 ## Windows desktop runtime
 
+Windows packages also include WinSparkle 0.9.4 (MIT) for signed installer
+updates. Its license and bundled Expat license are included under
+`_internal/licenses/winsparkle/`. Corresponding source:
+https://github.com/vslavik/winsparkle/tree/v0.9.4
+
 Windows uses PySide6 and the unmodified official AGPL Ghostscript distribution.
 The pywin32 package provides access to the Windows Shell recycle operation;
 its license text is copied from the installed distribution into the package's

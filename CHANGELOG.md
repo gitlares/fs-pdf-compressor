@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.0.16.1 — Windows only — Unreleased
+
+- Add WinSparkle 0.9.4 to the Windows installer for optional automatic update
+  checks and user-approved installation of Ed25519-signed updates.
+- Refuse update installation during PDF discovery, compression, or pending
+  Explorer requests; block new work after reserving the idle app for installation.
+- Update the existing per-user installation and relaunch the application.
+  Keep portable ZIP updates manual.
+- Add a separate Windows update feed, verified runtime packaging, release
+  signing tooling, privacy documentation, and regression coverage.
+- Keep the shared macOS/Linux version at 1.0.16 and Ghostscript at 10.07.1.
+  The Windows revision requires Windows 11 end-to-end testing before release;
+  existing Windows users need one manual update to gain WinSparkle support.
+- Verify the Windows installer and native signed-download/tamper-rejection
+  paths in a disposable Windows Server 2022 GitHub Actions runner. Record
+  successful upgrade from 1.0.16, preserved preferences and Explorer registry
+  integration, and installed application startup. Windows 11 visual checks
+  and production release publication remain pending.
+
 ## 1.0.16 — 2026-09-29
 
 - Restore Ghostscript 10.07.1 on macOS, Windows, AppImage, and Snap after a

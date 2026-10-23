@@ -34,7 +34,11 @@ Linux, with a self-contained AppImage for Linux users and a Windows x64 installe
 
 - Drag and drop one PDF, several PDFs, or a folder.
 - Send selected PDFs from Finder, Windows Explorer, GNOME Files, or KDE Dolphin.
-- Balanced compression by default, with two optional quality profiles.
+- Balanced compression by default, with Preserve, Maximum, and an optional
+  **Smart scans** profile for high-resolution black-and-white documents.
+- Smart scans converts only page-sized, near-monochrome document images to
+  lossless 1-bit encoding; colour marks, native text, vectors, and uncertain
+  images remain unchanged.
 - Replaces the original only when the result is smaller.
 - Optional **Keep original** mode creates a separate compressed copy and
   remembers your choice between app launches.

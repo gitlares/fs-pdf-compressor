@@ -20,7 +20,7 @@ import subprocess
 import sys
 import hashlib
 import json
-from importlib.metadata import version as package_version
+from importlib.metadata import distribution, version as package_version
 from pathlib import Path
 
 
@@ -192,6 +192,17 @@ def bundle_compliance_documents() -> None:
     ):
         if source.is_file():
             shutil.copy2(source, destination / name)
+    for package_name, output_name in (
+        ("Pillow", "Pillow-HPND-LICENSE.txt"),
+        ("pypdf", "pypdf-BSD-3-Clause-LICENSE.txt"),
+    ):
+        package = distribution(package_name)
+        license_file = next(
+            entry
+            for entry in (package.files or [])
+            if "license" in entry.name.lower()
+        )
+        shutil.copy2(package.locate_file(license_file), destination / output_name)
     (destination / "THIRD_PARTY_MANIFEST.json").write_text(
         json.dumps(
             {
@@ -200,6 +211,8 @@ def bundle_compliance_documents() -> None:
                 "python": sys.version.split()[0],
                 "pyside6": package_version("PySide6"),
                 "pyinstaller": package_version("PyInstaller"),
+                "pillow": package_version("Pillow"),
+                "pypdf": package_version("pypdf"),
                 "ghostscript": GHOSTSCRIPT_VERSION,
                 "ghostscript_license": "AGPL-3.0-or-later",
             },

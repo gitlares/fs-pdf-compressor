@@ -145,6 +145,12 @@ def bundle_compliance_documents(resources: Path, ghostscript_version_value: str)
     shutil.copy2(ROOT / "LICENSE", destination / "FS-PDF-Compressor-AGPL-3.0.txt")
     shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", destination)
     bundle_windows_runtime_license(destination)
+    bundle_python_package_license(
+        "Pillow", destination / "Pillow-HPND-LICENSE.txt"
+    )
+    bundle_python_package_license(
+        "pypdf", destination / "pypdf-BSD-3-Clause-LICENSE.txt"
+    )
     source_tag = f"gs{ghostscript_version_value.replace('.', '')}"
     (resources / "SOURCE_OFFER.md").write_text(
         "# Corresponding source\n\n"
@@ -166,6 +172,8 @@ def bundle_compliance_documents(resources: Path, ghostscript_version_value: str)
                 "pyside6": package_version("PySide6"),
                 "pywin32": package_version("pywin32"),
                 "pyinstaller": package_version("PyInstaller"),
+                "pillow": package_version("Pillow"),
+                "pypdf": package_version("pypdf"),
                 "ghostscript": ghostscript_version_value,
                 "ghostscript_license": "AGPL-3.0-or-later",
                 "ghostscript_modified": False,
@@ -185,6 +193,14 @@ def bundle_windows_runtime_license(destination: Path) -> None:
         raise RuntimeError("The pywin32 distribution is missing its license text")
     for index, entry in enumerate(licenses):
         shutil.copy2(package.locate_file(entry), destination / f"pywin32-{index}-{entry.name}")
+
+
+def bundle_python_package_license(package_name: str, destination: Path) -> None:
+    package = distribution(package_name)
+    license_file = next(
+        entry for entry in (package.files or []) if "license" in entry.name.lower()
+    )
+    shutil.copy2(package.locate_file(license_file), destination)
 
 
 def main() -> None:

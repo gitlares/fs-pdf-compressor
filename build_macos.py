@@ -397,6 +397,14 @@ def bundle_python_runtime_licenses() -> dict[str, str]:
         destination / "PyObjC-MIT-LICENSE.txt",
         list(site_packages.glob("pyobjc_framework_cocoa-*.dist-info/licenses/LICENSE.txt")),
     )
+    _copy_required_license(
+        destination / "Pillow-HPND-LICENSE.txt",
+        list(site_packages.glob("pillow-*.dist-info/licenses/LICENSE")),
+    )
+    _copy_required_license(
+        destination / "pypdf-BSD-3-Clause-LICENSE.txt",
+        list(site_packages.glob("pypdf-*.dist-info/licenses/LICENSE")),
+    )
     return {
         "python": sys.version.split()[0],
         "pyinstaller": package_version("PyInstaller"),
@@ -406,6 +414,8 @@ def bundle_python_runtime_licenses() -> dict[str, str]:
         "pyobjc_framework_service_management": package_version(
             "pyobjc-framework-ServiceManagement"
         ),
+        "pillow": package_version("Pillow"),
+        "pypdf": package_version("pypdf"),
     }
 
 

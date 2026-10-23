@@ -8,6 +8,8 @@ from pathlib import Path
 from unittest import mock
 
 from fs_pdf_compressor.core import (
+    QUALITY_PROFILES,
+    SMART_SCAN_PROFILE,
     _ghostscript_command,
     _ghostscript_subprocess_options,
     compress_pdf,
@@ -228,6 +230,11 @@ class ProcessOutputTests(unittest.TestCase):
 
 
 class GhostscriptCommandTests(unittest.TestCase):
+    def test_smart_scan_profile_is_opt_in_and_keeps_balanced_as_default(self):
+        self.assertEqual(QUALITY_PROFILES[1][1], "/ebook")
+        self.assertEqual(QUALITY_PROFILES[-1][1], SMART_SCAN_PROFILE)
+        self.assertIn("Smart scans", QUALITY_PROFILES[-1][0])
+
     def test_windows_ghostscript_runs_without_a_console_window(self):
         with mock.patch("fs_pdf_compressor.core.os.name", "nt"):
             self.assertEqual(
@@ -368,7 +375,9 @@ class GhostscriptCommandTests(unittest.TestCase):
             original.write_bytes(b"original payload")
 
             def write_smaller(command, **_kwargs):
-                output = next(value for value in command if value.startswith("-sOutputFile="))
+                output = next(
+                    value for value in command if value.startswith("-sOutputFile=")
+                )
                 Path(output.removeprefix("-sOutputFile=")).write_bytes(b"%PDF-1.7\n%%EOF")
                 return subprocess.CompletedProcess(command, 0, b"", b"")
 
@@ -377,7 +386,9 @@ class GhostscriptCommandTests(unittest.TestCase):
                     "fs_pdf_compressor.core.get_ghostscript_config",
                     return_value=("gs", {}),
                 ),
-                mock.patch("fs_pdf_compressor.core.subprocess.run", side_effect=write_smaller),
+                mock.patch(
+                    "fs_pdf_compressor.core.subprocess.run", side_effect=write_smaller
+                ),
                 mock.patch(
                     "fs_pdf_compressor.core.move_to_system_trash",
                     side_effect=lambda path: path.unlink(),
@@ -397,7 +408,9 @@ class GhostscriptCommandTests(unittest.TestCase):
             original.write_bytes(b"original payload")
 
             def write_smaller(command, **_kwargs):
-                output = next(value for value in command if value.startswith("-sOutputFile="))
+                output = next(
+                    value for value in command if value.startswith("-sOutputFile=")
+                )
                 Path(output.removeprefix("-sOutputFile=")).write_bytes(b"%PDF-1.7\n%%EOF")
                 return subprocess.CompletedProcess(command, 0, b"", b"")
 
@@ -406,7 +419,9 @@ class GhostscriptCommandTests(unittest.TestCase):
                     "fs_pdf_compressor.core.get_ghostscript_config",
                     return_value=("gs", {}),
                 ),
-                mock.patch("fs_pdf_compressor.core.subprocess.run", side_effect=write_smaller),
+                mock.patch(
+                    "fs_pdf_compressor.core.subprocess.run", side_effect=write_smaller
+                ),
                 mock.patch(
                     "fs_pdf_compressor.core.move_to_system_trash",
                     side_effect=TrashError("trash unavailable"),
@@ -469,6 +484,76 @@ class GhostscriptCommandTests(unittest.TestCase):
             self.assertEqual(status, "original.pdf — compression failed")
             self.assertIsNone(metrics)
             self.assertFalse(Path(f"{original}.temp.pdf").exists())
+
+    def test_smart_profile_preprocesses_then_cleans_its_temporary_pdf(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / "original.pdf"
+            original.write_bytes(b"original payload")
+            received_input = None
+
+            def prepare_smart(_source, destination):
+                Path(destination).write_bytes(b"%PDF-1.7\nsmart input\n%%EOF")
+                return 1
+
+            def write_smaller(command, **_kwargs):
+                nonlocal received_input
+                received_input = Path(command[-1])
+                output = next(value for value in command if value.startswith("-sOutputFile="))
+                Path(output.removeprefix("-sOutputFile=")).write_bytes(b"%PDF-1.7\n%%EOF")
+                return subprocess.CompletedProcess(command, 0, b"", b"")
+
+            with (
+                mock.patch(
+                    "fs_pdf_compressor.core.get_ghostscript_config",
+                    return_value=("gs", {}),
+                ),
+                mock.patch(
+                    "fs_pdf_compressor.core.preprocess_smart_scans",
+                    side_effect=prepare_smart,
+                ) as preprocess,
+                mock.patch("fs_pdf_compressor.core.subprocess.run", side_effect=write_smaller),
+            ):
+                status, metrics = compress_pdf(
+                    str(original), SMART_SCAN_PROFILE, keep_original=True
+                )
+
+            self.assertIsNotNone(metrics)
+            self.assertIn("original compressed.pdf", status)
+            preprocess.assert_called_once()
+            self.assertIsNotNone(received_input)
+            self.assertNotEqual(received_input, original)
+            self.assertFalse(received_input.exists())
+
+    def test_smart_profile_falls_back_to_original_when_preprocessing_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / "original.pdf"
+            original.write_bytes(b"original payload")
+            received_input = None
+
+            def write_smaller(command, **_kwargs):
+                nonlocal received_input
+                received_input = Path(command[-1])
+                output = next(value for value in command if value.startswith("-sOutputFile="))
+                Path(output.removeprefix("-sOutputFile=")).write_bytes(b"%PDF-1.7\n%%EOF")
+                return subprocess.CompletedProcess(command, 0, b"", b"")
+
+            with (
+                mock.patch(
+                    "fs_pdf_compressor.core.get_ghostscript_config",
+                    return_value=("gs", {}),
+                ),
+                mock.patch(
+                    "fs_pdf_compressor.core.preprocess_smart_scans",
+                    side_effect=ValueError("unsupported PDF"),
+                ),
+                mock.patch("fs_pdf_compressor.core.subprocess.run", side_effect=write_smaller),
+            ):
+                _, metrics = compress_pdf(
+                    str(original), SMART_SCAN_PROFILE, keep_original=True
+                )
+
+            self.assertIsNotNone(metrics)
+            self.assertEqual(received_input.resolve(), original.resolve())
 
 
 if __name__ == "__main__":

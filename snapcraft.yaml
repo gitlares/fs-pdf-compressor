@@ -105,6 +105,10 @@ parts:
       cp -a fs_pdf_compressor assets "$app_root/"
       install -Dm0644 LICENSE "$app_root/licenses/FS-PDF-Compressor-AGPL-3.0.txt"
       install -Dm0644 THIRD_PARTY_NOTICES.md "$app_root/licenses/THIRD_PARTY_NOTICES.md"
+      install -Dm0644 "$app_root/python/pillow-11.3.0.dist-info/licenses/LICENSE" \
+        "$app_root/licenses/Pillow-HPND-LICENSE.txt"
+      install -Dm0644 "$app_root/python/pypdf-6.12.2.dist-info/licenses/LICENSE" \
+        "$app_root/licenses/pypdf-BSD-3-Clause-LICENSE.txt"
       test -f "$CRAFT_STAGE/usr/bin/gs"
       test -d "$CRAFT_STAGE/usr/share/ghostscript/10.07.1/lib"
       printf '%s\n' "$CRAFT_PROJECT_VERSION" > "$app_root/VERSION"

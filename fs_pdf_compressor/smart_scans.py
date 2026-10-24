@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageChops
 from pypdf import PdfReader, PdfWriter
 
 
@@ -14,11 +14,54 @@ MIN_LONG_EDGE = 1600
 MIN_PIXEL_COUNT = 1_500_000
 BINARIZATION_THRESHOLD = 215
 ASPECT_RATIO_TOLERANCE = 0.08
-MAX_COLOUR_PIXEL_FRACTION = 0.0005
+MAX_COLOUR_PIXEL_COUNT = 8
 MIN_WHITE_PIXEL_FRACTION = 0.60
 MAX_MIDTONE_PIXEL_FRACTION = 0.35
 MIN_DARK_PIXEL_FRACTION = 0.0
 MAX_DARK_PIXEL_FRACTION = 0.25
+AMBIGUOUS_TONE_TILE_SIZE = 8
+MIN_AMBIGUOUS_TONE_TILE_VALUE = 64
+
+
+def _masked_xobject_names(page) -> set[str]:
+    """Return direct image XObject names carrying a PDF mask or soft mask.
+
+    Replacing such an image via pypdf can discard its compositing information.
+    Read the XObject dictionaries before materialising image data so masked
+    images are skipped entirely.
+    """
+    resources = page.get("/Resources")
+    if resources is None:
+        return set()
+    xobjects = resources.get("/XObject")
+    if xobjects is None:
+        return set()
+
+    names = set()
+    for name, xobject in xobjects.items():
+        object_data = xobject.get_object()
+        if object_data.get("/Subtype") != "/Image":
+            continue
+        if "/SMask" not in object_data and "/Mask" not in object_data:
+            continue
+        names.add(str(name))
+    return names
+
+
+def _has_concentrated_ambiguous_tones(luminance: Image.Image) -> bool:
+    """Identify a small, visible gray region without rejecting scan noise."""
+    ambiguous = luminance.point(
+        lambda value: 255 if BINARIZATION_THRESHOLD < value < 230 else 0
+    )
+    width, height = luminance.size
+    pooled = ambiguous.resize(
+        (
+            (width + AMBIGUOUS_TONE_TILE_SIZE - 1) // AMBIGUOUS_TONE_TILE_SIZE,
+            (height + AMBIGUOUS_TONE_TILE_SIZE - 1) // AMBIGUOUS_TONE_TILE_SIZE,
+        ),
+        Image.Resampling.BOX,
+    )
+    return pooled.getextrema()[1] >= MIN_AMBIGUOUS_TONE_TILE_VALUE
 
 
 def _looks_like_page_scan(
@@ -44,28 +87,25 @@ def _looks_like_page_scan(
         return False
 
     sample = image.convert("RGB")
-    sample.thumbnail((512, 512), Image.Resampling.LANCZOS)
-    pixels = list(sample.getdata())
-    if not pixels:
+    red, green, blue = sample.split()
+    colour_distance = ImageChops.lighter(
+        ImageChops.difference(red, green),
+        ImageChops.lighter(
+            ImageChops.difference(red, blue), ImageChops.difference(green, blue)
+        ),
+    )
+    coloured = sum(colour_distance.histogram()[13:])
+    luminance = sample.convert("L")
+    histogram = luminance.histogram()
+    total = sum(histogram)
+    if not total:
         return False
-
-    coloured = 0
-    white = 0
-    midtone = 0
-    dark = 0
-    for red, green, blue in pixels:
-        if max(red, green, blue) - min(red, green, blue) > 12:
-            coloured += 1
-        luminance = (299 * red + 587 * green + 114 * blue) // 1000
-        if luminance >= 230:
-            white += 1
-        elif luminance >= 64:
-            midtone += 1
-        else:
-            dark += 1
-
-    total = len(pixels)
-    if coloured > max(8, round(total * MAX_COLOUR_PIXEL_FRACTION)):
+    white = sum(histogram[230:])
+    midtone = sum(histogram[64:230])
+    dark = sum(histogram[:64])
+    if coloured > MAX_COLOUR_PIXEL_COUNT:
+        return False
+    if _has_concentrated_ambiguous_tones(luminance):
         return False
     white_fraction = white / total
     midtone_fraction = midtone / total
@@ -91,7 +131,7 @@ def _bilevel_scan_image(image: Image.Image) -> Image.Image:
 
 
 def preprocess_smart_scans(source: str | Path, destination: str | Path) -> int:
-    """Write a PDF with safe page scans replaced by lossless bilevel images.
+    """Write a PDF with safe page scans replaced by bilevel images.
 
     Returns the number of distinct image objects replaced. No destination is
     left behind when there are no safe candidates. Parsing and writing errors
@@ -108,11 +148,19 @@ def preprocess_smart_scans(source: str | Path, destination: str | Path) -> int:
 
     for page in writer.pages:
         page_size = (float(page.mediabox.width), float(page.mediabox.height))
-        for image_file in page.images:
+        masked_names = _masked_xobject_names(page)
+        for image_name in page.images.keys():
+            # Nested Form XObjects are more complex to inspect safely. Leave
+            # them unchanged rather than risk altering a composited image.
+            if isinstance(image_name, (list, tuple)) or image_name in masked_names:
+                continue
+            image_file = page.images[image_name]
             reference = image_file.indirect_reference
-            if reference is None or image_file.image is None:
+            if reference is None:
                 continue
             reference_key = (reference.idnum, reference.generation)
+            if image_file.image is None:
+                continue
             if reference_key in replaced_references:
                 continue
             if not _looks_like_page_scan(image_file.image, page_size):

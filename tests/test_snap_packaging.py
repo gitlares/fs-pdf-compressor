@@ -20,6 +20,15 @@ class SnapPackagingTests(unittest.TestCase):
         self.assertIn("confinement: strict\n", self.recipe)
         self.assertIn('test "$source_version" = "$CRAFT_PROJECT_VERSION"', self.recipe)
 
+    def test_smart_scan_runtime_and_notices_are_packaged(self):
+        requirements = (
+            Path(__file__).resolve().parents[1] / "snap" / "requirements.txt"
+        ).read_text()
+        self.assertIn("Pillow==11.3.0", requirements)
+        self.assertIn("pypdf==6.12.2", requirements)
+        self.assertIn("Pillow-HPND-LICENSE.txt", self.recipe)
+        self.assertIn("pypdf-BSD-3-Clause-LICENSE.txt", self.recipe)
+
 
 if __name__ == "__main__":
     unittest.main()

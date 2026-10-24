@@ -6,6 +6,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 from pypdf import PdfReader, PdfWriter
+from pypdf.generic import NameObject, NullObject
 
 from fs_pdf_compressor.smart_scans import (
     _bilevel_scan_image,
@@ -64,9 +65,32 @@ class SmartScanClassificationTests(unittest.TestCase):
 
     def test_rejects_even_a_small_deliberate_colour_mark(self):
         image = _document_scan(mode="RGB")
-        ImageDraw.Draw(image).rectangle((100, 100, 220, 220), fill=(210, 30, 30))
+        ImageDraw.Draw(image).rectangle((100, 100, 119, 119), fill=(210, 30, 30))
 
         self.assertFalse(_looks_like_page_scan(image, (595, 842)))
+
+    def test_rejects_a_small_faint_gray_annotation(self):
+        image = _document_scan(mode="RGB")
+        ImageDraw.Draw(image).rectangle((100, 100, 119, 119), fill=(225, 225, 225))
+
+        self.assertFalse(_looks_like_page_scan(image, (595, 842)))
+
+    def test_rejects_a_grayscale_gradient_patch(self):
+        image = _document_scan(mode="RGB")
+        patch = Image.new("L", (240, 240))
+        patch.putdata([x for _y in range(240) for x in range(240)])
+        image.paste(patch.convert("RGB"), (100, 100))
+
+        self.assertFalse(_looks_like_page_scan(image, (595, 842)))
+
+    def test_allows_isolated_near_threshold_scan_noise(self):
+        image = _document_scan(mode="RGB")
+        draw = ImageDraw.Draw(image)
+        for coordinate in range(100, 1700, 40):
+            draw.point((coordinate, 100), fill=(225, 225, 225))
+            draw.point((coordinate, 2200), fill=(225, 225, 225))
+
+        self.assertTrue(_looks_like_page_scan(image, (595, 842)))
 
     def test_rejects_small_or_non_page_shaped_images(self):
         self.assertFalse(
@@ -127,6 +151,24 @@ class SmartScanPdfTests(unittest.TestCase):
             output_pdf = root / "smart.pdf"
             colour = Image.new("RGB", (1800, 2400), (40, 90, 180))
             colour.save(source_pdf, "PDF", resolution=300)
+
+            replacements = preprocess_smart_scans(source_pdf, output_pdf)
+
+            self.assertEqual(replacements, 0)
+            self.assertFalse(output_pdf.exists())
+
+    def test_skips_image_objects_with_a_soft_mask(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source_pdf = root / "masked.pdf"
+            output_pdf = root / "smart.pdf"
+            _document_scan().save(source_pdf, "PDF", resolution=300)
+
+            reader = PdfReader(str(source_pdf))
+            writer = PdfWriter(clone_from=reader)
+            image = writer.pages[0].images[0]
+            image.indirect_reference.get_object()[NameObject("/SMask")] = NullObject()
+            writer.write(str(source_pdf))
 
             replacements = preprocess_smart_scans(source_pdf, output_pdf)
 

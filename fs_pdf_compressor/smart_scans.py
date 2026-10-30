@@ -21,6 +21,7 @@ MIN_DARK_PIXEL_FRACTION = 0.0
 MAX_DARK_PIXEL_FRACTION = 0.25
 AMBIGUOUS_TONE_TILE_SIZE = 8
 MIN_AMBIGUOUS_TONE_TILE_VALUE = 64
+MAX_FAINT_CONTENT_LUMINANCE = 245
 
 
 def _masked_xobject_names(page) -> set[str]:
@@ -48,13 +49,15 @@ def _masked_xobject_names(page) -> set[str]:
     return names
 
 
-def _has_concentrated_ambiguous_tones(luminance: Image.Image) -> bool:
-    """Identify a small, visible gray region without rejecting scan noise."""
-    ambiguous = luminance.point(
-        lambda value: 255 if BINARIZATION_THRESHOLD < value < 230 else 0
+def _has_concentrated_faint_content(luminance: Image.Image) -> bool:
+    """Identify faint localized content without rejecting ordinary scan noise."""
+    faint_content = luminance.point(
+        lambda value: 255
+        if BINARIZATION_THRESHOLD < value <= MAX_FAINT_CONTENT_LUMINANCE
+        else 0
     )
     width, height = luminance.size
-    pooled = ambiguous.resize(
+    pooled = faint_content.resize(
         (
             (width + AMBIGUOUS_TONE_TILE_SIZE - 1) // AMBIGUOUS_TONE_TILE_SIZE,
             (height + AMBIGUOUS_TONE_TILE_SIZE - 1) // AMBIGUOUS_TONE_TILE_SIZE,
@@ -105,7 +108,7 @@ def _looks_like_page_scan(
     dark = sum(histogram[:64])
     if coloured > MAX_COLOUR_PIXEL_COUNT:
         return False
-    if _has_concentrated_ambiguous_tones(luminance):
+    if _has_concentrated_faint_content(luminance):
         return False
     white_fraction = white / total
     midtone_fraction = midtone / total

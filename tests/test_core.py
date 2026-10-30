@@ -7,6 +7,8 @@ import zlib
 from pathlib import Path
 from unittest import mock
 
+from PIL import Image, ImageDraw, ImageFont
+
 from fs_pdf_compressor.core import (
     QUALITY_PROFILES,
     SMART_SCAN_PROFILE,
@@ -16,6 +18,7 @@ from fs_pdf_compressor.core import (
     compressed_copy_path,
     expand_pdf_paths,
 )
+from fs_pdf_compressor.smart_scans import preprocess_smart_scans
 from fs_pdf_compressor.system_trash import TrashError
 
 
@@ -121,6 +124,51 @@ def _write_mixed_transparency_pdf(path: Path) -> None:
         ),
     ]
     payload = bytearray(b"%PDF-1.7\n% mixed-transparency regression fixture\n")
+    offsets = [0]
+    for number, body in enumerate(objects, start=1):
+        offsets.append(len(payload))
+        payload.extend(f"{number} 0 obj\n".encode())
+        payload.extend(body)
+        payload.extend(b"\nendobj\n")
+    xref_offset = len(payload)
+    payload.extend(f"xref\n0 {len(objects) + 1}\n".encode())
+    payload.extend(b"0000000000 65535 f \n")
+    for offset in offsets[1:]:
+        payload.extend(f"{offset:010d} 00000 n \n".encode())
+    payload.extend(
+        f"trailer\n<</Size {len(objects) + 1}/Root 1 0 R>>\n"
+        f"startxref\n{xref_offset}\n%%EOF\n".encode()
+    )
+    path.write_bytes(payload)
+
+
+def _write_faint_annotation_scan_pdf(path: Path, gray: int = 230) -> None:
+    """Create a lossless Flate RGB page scan with faint localized text."""
+    image = Image.new("RGB", (1800, 2400), "white")
+    draw = ImageDraw.Draw(image)
+    for y in range(240, 2050, 80):
+        draw.rectangle((180, y, 1450, y + 18), fill="black")
+    draw.rectangle((180, 120, 980, 165), fill="black")
+    draw.text(
+        (180, 40),
+        "PAID 123",
+        font=ImageFont.load_default(size=64),
+        fill=(gray, gray, gray),
+    )
+    page_content = b"q 595 0 0 842 0 0 cm /Im0 Do Q"
+    objects = [
+        b"<</Type/Catalog/Pages 2 0 R>>",
+        b"<</Type/Pages/Kids[3 0 R]/Count 1>>",
+        b"<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Resources"
+        b"<</XObject<</Im0 4 0 R>>>>/Contents 5 0 R>>",
+        _pdf_stream(
+            b"/Type/XObject/Subtype/Image/Width 1800/Height 2400"
+            b"/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/FlateDecode",
+            zlib.compress(image.tobytes()),
+        ),
+        _pdf_stream(b"", page_content),
+    ]
+    payload = bytearray(b"%PDF-1.7\n% faint-annotation regression fixture\n")
     offsets = [0]
     for number, body in enumerate(objects, start=1):
         offsets.append(len(payload))
@@ -554,6 +602,43 @@ class GhostscriptCommandTests(unittest.TestCase):
 
             self.assertIsNotNone(metrics)
             self.assertEqual(received_input.resolve(), original.resolve())
+
+    def test_smart_profile_falls_back_safely_for_faint_gray_text(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / "faint-annotation.pdf"
+            _write_faint_annotation_scan_pdf(original)
+            original_bytes = original.read_bytes()
+            received_input = None
+            preprocessed = Path(directory) / "smart-scan.pdf"
+
+            self.assertEqual(preprocess_smart_scans(original, preprocessed), 0)
+            self.assertFalse(preprocessed.exists())
+
+            def keep_original_size(command, **_kwargs):
+                nonlocal received_input
+                received_input = Path(command[-1])
+                output = next(value for value in command if value.startswith("-sOutputFile="))
+                Path(output.removeprefix("-sOutputFile=")).write_bytes(original_bytes)
+                return subprocess.CompletedProcess(command, 0, b"", b"")
+
+            with (
+                mock.patch(
+                    "fs_pdf_compressor.core.get_ghostscript_config",
+                    return_value=("gs", {}),
+                ),
+                mock.patch(
+                    "fs_pdf_compressor.core.subprocess.run",
+                    side_effect=keep_original_size,
+                ),
+            ):
+                status, metrics = compress_pdf(
+                    str(original), SMART_SCAN_PROFILE, keep_original=True
+                )
+
+            self.assertEqual(status, "faint-annotation.pdf — no size reduction")
+            self.assertIsNone(metrics)
+            self.assertEqual(received_input.resolve(), original.resolve())
+            self.assertEqual(original.read_bytes(), original_bytes)
 
 
 if __name__ == "__main__":

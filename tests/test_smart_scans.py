@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from pypdf import PdfReader, PdfWriter
 from pypdf.generic import NameObject, NullObject
 
@@ -74,6 +74,19 @@ class SmartScanClassificationTests(unittest.TestCase):
         ImageDraw.Draw(image).rectangle((100, 100, 119, 119), fill=(225, 225, 225))
 
         self.assertFalse(_looks_like_page_scan(image, (595, 842)))
+
+    def test_rejects_faint_gray_text(self):
+        for gray in (230, 235, 240, 245):
+            with self.subTest(gray=gray):
+                image = _document_scan(mode="RGB")
+                ImageDraw.Draw(image).text(
+                    (180, 40),
+                    "PAID 123",
+                    font=ImageFont.load_default(size=64),
+                    fill=(gray, gray, gray),
+                )
+
+                self.assertFalse(_looks_like_page_scan(image, (595, 842)))
 
     def test_rejects_a_grayscale_gradient_patch(self):
         image = _document_scan(mode="RGB")

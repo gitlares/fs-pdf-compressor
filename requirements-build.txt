@@ -1,4 +1,6 @@
 PyInstaller==6.21.0
+Pillow==11.3.0
+pypdf==6.12.2
 pyobjc-framework-Cocoa==12.2.1
 pyobjc-framework-Quartz==12.2.1
 pyobjc-framework-ServiceManagement==12.2.1

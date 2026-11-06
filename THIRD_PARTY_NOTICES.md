@@ -45,6 +45,15 @@ licensed under the MIT License. Its license text is included at
 
 Source and release information: https://github.com/sparkle-project/Sparkle
 
+## PDF and image processing
+
+The optional Smart scans profile uses pypdf under the BSD 3-Clause License and
+Pillow under the HPND License. Their license texts and exact packaged versions
+are included with each release. Processing remains local to the user's device.
+
+- pypdf source: https://github.com/py-pdf/pypdf
+- Pillow source: https://github.com/python-pillow/Pillow
+
 ## Linux desktop runtime
 
 The Linux AppImage packages PySide6 (Qt for Python), PyInstaller, the Python

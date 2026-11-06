@@ -14,9 +14,11 @@ from pathlib import Path
 
 from fs_pdf_compressor.system_trash import TrashError, move_to_system_trash
 from fs_pdf_compressor.file_guard import FileBusyError, document_lock
+from fs_pdf_compressor.smart_scans import preprocess_smart_scans
 
 
 APP_NAME = "FS PDF Compressor"
+SMART_SCAN_PROFILE = "/smart-scans"
 QUALITY_PROFILES = (
     (
         "Preserve quality (minimal loss)",
@@ -33,8 +35,14 @@ QUALITY_PROFILES = (
         "/screen",
         "Creates a smaller file with greater visual quality loss.",
     ),
+    (
+        "Smart scans (B&W documents)",
+        SMART_SCAN_PROFILE,
+        "Optimizes safe monochrome page scans while preserving colour and "
+        "native PDF content.",
+    ),
 )
-QUALITY_CONTROL_LABELS = ("Preserve", "Balanced", "Maximum")
+QUALITY_CONTROL_LABELS = ("Preserve", "Balanced", "Maximum", "Smart scans")
 
 
 def format_file_size(byte_count: int) -> str:
@@ -288,6 +296,7 @@ def _valid_pdf_output(path):
 def _compress_locked(original_path, pdf_settings, keep_original):
     filename = os.path.basename(original_path)
     temp_path = None
+    smart_temp_path = None
     try:
         gs_path, gs_environment = get_ghostscript_config()
         if not gs_path:
@@ -295,14 +304,39 @@ def _compress_locked(original_path, pdf_settings, keep_original):
 
         original_stat = os.stat(original_path)
         original_size = original_stat.st_size
-        fd, temp_path = tempfile.mkstemp(prefix=".fs-pdf-", suffix=".tmp", dir=Path(original_path).parent)
+        compression_input = original_path
+        effective_pdf_settings = pdf_settings
+        if pdf_settings == SMART_SCAN_PROFILE:
+            effective_pdf_settings = "/ebook"
+            smart_fd, smart_temp_path = tempfile.mkstemp(
+                prefix=".fs-pdf-smart-",
+                suffix=".pdf",
+                dir=Path(original_path).parent,
+            )
+            os.close(smart_fd)
+            os.unlink(smart_temp_path)
+            try:
+                replacements = preprocess_smart_scans(
+                    original_path,
+                    smart_temp_path,
+                )
+                if replacements and _valid_pdf_output(smart_temp_path):
+                    compression_input = smart_temp_path
+                else:
+                    Path(smart_temp_path).unlink(missing_ok=True)
+            except Exception:
+                Path(smart_temp_path).unlink(missing_ok=True)
+
+        fd, temp_path = tempfile.mkstemp(
+            prefix=".fs-pdf-", suffix=".tmp", dir=Path(original_path).parent
+        )
         os.close(fd)
         result = subprocess.run(
             _ghostscript_command(
                 gs_path,
                 temp_path,
-                original_path,
-                pdf_settings,
+                compression_input,
+                effective_pdf_settings,
             ),
             env=gs_environment,
             stdout=subprocess.DEVNULL,
@@ -353,3 +387,6 @@ def _compress_locked(original_path, pdf_settings, keep_original):
         if isinstance(error, TrashError):
             return f"{filename} — could not recycle original; not replaced", None
         return f"{filename} — compression failed", None
+    finally:
+        if smart_temp_path:
+            Path(smart_temp_path).unlink(missing_ok=True)

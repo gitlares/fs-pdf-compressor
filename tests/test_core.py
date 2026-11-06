@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import subprocess
+import io
 import tempfile
 import unittest
 import zlib
@@ -17,6 +18,7 @@ from fs_pdf_compressor.core import (
     compress_pdf,
     compressed_copy_path,
     expand_pdf_paths,
+    get_ghostscript_config,
 )
 from fs_pdf_compressor.smart_scans import preprocess_smart_scans
 from fs_pdf_compressor.system_trash import TrashError
@@ -142,8 +144,10 @@ def _write_mixed_transparency_pdf(path: Path) -> None:
     path.write_bytes(payload)
 
 
-def _write_faint_annotation_scan_pdf(path: Path, gray: int = 230) -> None:
-    """Create a lossless Flate RGB page scan with faint localized text."""
+def _write_faint_annotation_scan_pdf(
+    path: Path, gray: int = 230, encoding: str = "flate"
+) -> None:
+    """Create an RGB page scan with faint text, lossless or JPEG encoded."""
     image = Image.new("RGB", (1800, 2400), "white")
     draw = ImageDraw.Draw(image)
     for y in range(240, 2050, 80):
@@ -156,6 +160,13 @@ def _write_faint_annotation_scan_pdf(path: Path, gray: int = 230) -> None:
         fill=(gray, gray, gray),
     )
     page_content = b"q 595 0 0 842 0 0 cm /Im0 Do Q"
+    image_bytes = zlib.compress(image.tobytes())
+    image_filter = b"/FlateDecode"
+    if encoding == "jpeg":
+        stream = io.BytesIO()
+        image.save(stream, "JPEG", quality=75)
+        image_bytes = stream.getvalue()
+        image_filter = b"/DCTDecode"
     objects = [
         b"<</Type/Catalog/Pages 2 0 R>>",
         b"<</Type/Pages/Kids[3 0 R]/Count 1>>",
@@ -163,8 +174,8 @@ def _write_faint_annotation_scan_pdf(path: Path, gray: int = 230) -> None:
         b"<</XObject<</Im0 4 0 R>>>>/Contents 5 0 R>>",
         _pdf_stream(
             b"/Type/XObject/Subtype/Image/Width 1800/Height 2400"
-            b"/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/FlateDecode",
-            zlib.compress(image.tobytes()),
+            b"/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter" + image_filter,
+            image_bytes,
         ),
         _pdf_stream(b"", page_content),
     ]
@@ -278,6 +289,83 @@ class ProcessOutputTests(unittest.TestCase):
 
 
 class GhostscriptCommandTests(unittest.TestCase):
+    def test_smart_pipeline_preserves_faint_annotation_with_real_ghostscript(self):
+        gs_path, environment = get_ghostscript_config()
+        if not gs_path:
+            self.skipTest("Ghostscript is not installed")
+        for encoding, gray in (
+            (encoding, gray) for encoding in ("flate", "jpeg")
+            for gray in (245, 246, 248, 250, 254)
+        ):
+            with self.subTest(encoding=encoding, gray=gray), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                original = root / "annotation.pdf"
+                _write_faint_annotation_scan_pdf(original, gray, encoding)
+                source_bytes = original.read_bytes()
+                with mock.patch(
+                    "fs_pdf_compressor.core.subprocess.run", wraps=subprocess.run
+                ) as actual_ghostscript:
+                    status, metrics = compress_pdf(str(original), SMART_SCAN_PROFILE, True)
+                actual_ghostscript.assert_called_once()
+                command = actual_ghostscript.call_args.args[0]
+                self.assertEqual(Path(command[-1]), original.resolve())
+                self.assertIn("-dPDFSETTINGS=/ebook", command)
+                self.assertNotIn("failed", status)
+                self.assertEqual(original.read_bytes(), source_bytes)
+                if metrics is None:
+                    self.assertIn("no size reduction", status)
+                result = root / "annotation compressed.pdf" if metrics else original
+                source_pixels = None
+                for label, pdf in (("source", original), ("result", result)):
+                    rendered = root / f"{label}.png"
+                    rendering = subprocess.run([
+                        gs_path, "-sDEVICE=pnggray", "-r216", "-dBATCH",
+                        "-dNOPAUSE", "-dQUIET", f"-sOutputFile={rendered}", str(pdf),
+                    ], env=environment, capture_output=True)
+                    self.assertEqual(rendering.returncode, 0, rendering.stderr)
+                    with Image.open(rendered) as image:
+                        region = image.crop((170, 35, 530, 110))
+                        self.assertLess(region.getextrema()[0], 255)
+                        visible = sum(count for value, count in enumerate(region.histogram()) if value < 255)
+                        if label == "source":
+                            source_pixels = visible
+                        else:
+                            self.assertGreaterEqual(visible, source_pixels * 0.80)
+
+    def test_clean_flate_scan_still_benefits_from_smart_compression(self):
+        if not get_ghostscript_config()[0]:
+            self.skipTest("Ghostscript is not installed")
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / "clean.pdf"
+            _write_faint_annotation_scan_pdf(original, gray=255)
+            status, metrics = compress_pdf(str(original), SMART_SCAN_PROFILE, True)
+            self.assertNotIn("failed", status)
+            self.assertIsNotNone(metrics)
+            self.assertGreater(metrics["saved_size"], metrics["original_size"] * 0.50)
+
+    def test_jpeg_ringing_falls_back_to_balanced_with_real_ghostscript(self):
+        if not get_ghostscript_config()[0]:
+            self.skipTest("Ghostscript is not installed")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            original = root / "jpeg.pdf"
+            _write_faint_annotation_scan_pdf(original, gray=255, encoding="jpeg")
+            preprocessed = root / "smart.pdf"
+            self.assertEqual(preprocess_smart_scans(original, preprocessed), 0)
+            self.assertFalse(preprocessed.exists())
+            balanced_status, balanced = compress_pdf(str(original), "/ebook", True)
+            smart_status, smart = compress_pdf(str(original), SMART_SCAN_PROFILE, True)
+            if balanced is None:
+                self.assertIn("no size reduction", balanced_status)
+                self.assertIn("no size reduction", smart_status)
+                self.assertIsNone(smart)
+            else:
+                self.assertIsNotNone(smart)
+                self.assertAlmostEqual(
+                    balanced["saved_size"] / balanced["original_size"],
+                    smart["saved_size"] / smart["original_size"], delta=0.01,
+                )
+
     def test_smart_scan_profile_is_opt_in_and_keeps_balanced_as_default(self):
         self.assertEqual(QUALITY_PROFILES[1][1], "/ebook")
         self.assertEqual(QUALITY_PROFILES[-1][1], SMART_SCAN_PROFILE)

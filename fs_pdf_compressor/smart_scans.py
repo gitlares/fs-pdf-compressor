@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageChops
+from PIL import Image, ImageChops, ImageFilter
 from pypdf import PdfReader, PdfWriter
 
 
@@ -19,9 +19,8 @@ MIN_WHITE_PIXEL_FRACTION = 0.60
 MAX_MIDTONE_PIXEL_FRACTION = 0.35
 MIN_DARK_PIXEL_FRACTION = 0.0
 MAX_DARK_PIXEL_FRACTION = 0.25
-AMBIGUOUS_TONE_TILE_SIZE = 8
-MIN_AMBIGUOUS_TONE_TILE_VALUE = 64
-MAX_FAINT_CONTENT_LUMINANCE = 245
+LOCAL_BACKGROUND_WINDOW = 3
+MIN_COHERENT_FAINT_PIXELS = 2
 
 
 def _masked_xobject_names(page) -> set[str]:
@@ -50,21 +49,41 @@ def _masked_xobject_names(page) -> set[str]:
 
 
 def _has_concentrated_faint_content(luminance: Image.Image) -> bool:
-    """Identify faint localized content without rejecting ordinary scan noise."""
-    faint_content = luminance.point(
-        lambda value: 255
-        if BINARIZATION_THRESHOLD < value <= MAX_FAINT_CONTENT_LUMINANCE
-        else 0
+    """Reject spatially coherent marks that thresholding would erase.
+
+    Compare pixels to their local light background, including a one-level
+    contrast near white. Connected faint marks are uncertain content, regardless
+    of absolute brightness. Isolated speckles are allowed; coherent JPEG ringing
+    is deliberately treated as uncertain too, falling back to Balanced.
+    """
+    background = luminance.filter(ImageFilter.MaxFilter(LOCAL_BACKGROUND_WINDOW))
+    contrast = ImageChops.subtract(background, luminance).point(
+        lambda value: 255 if value > 0 else 0
     )
+    erased = luminance.point(
+        lambda value: 255 if value > BINARIZATION_THRESHOLD else 0
+    )
+    mask = bytearray(ImageChops.darker(contrast, erased).tobytes())
     width, height = luminance.size
-    pooled = faint_content.resize(
-        (
-            (width + AMBIGUOUS_TONE_TILE_SIZE - 1) // AMBIGUOUS_TONE_TILE_SIZE,
-            (height + AMBIGUOUS_TONE_TILE_SIZE - 1) // AMBIGUOUS_TONE_TILE_SIZE,
-        ),
-        Image.Resampling.BOX,
-    )
-    return pooled.getextrema()[1] >= MIN_AMBIGUOUS_TONE_TILE_VALUE
+    start = mask.find(255)
+    while start >= 0:
+        pending = [start]
+        mask[start] = 0
+        count = 1
+        while pending:
+            position = pending.pop()
+            x, y = position % width, position // width
+            for ny in range(max(0, y - 1), min(height, y + 2)):
+                for nx in range(max(0, x - 1), min(width, x + 2)):
+                    neighbour = ny * width + nx
+                    if mask[neighbour]:
+                        mask[neighbour] = 0
+                        count += 1
+                        if count >= MIN_COHERENT_FAINT_PIXELS:
+                            return True
+                        pending.append(neighbour)
+        start = mask.find(255, start + 1)
+    return False
 
 
 def _looks_like_page_scan(

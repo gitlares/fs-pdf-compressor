@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import tempfile
+import io
 import unittest
 from pathlib import Path
 
@@ -76,7 +77,7 @@ class SmartScanClassificationTests(unittest.TestCase):
         self.assertFalse(_looks_like_page_scan(image, (595, 842)))
 
     def test_rejects_faint_gray_text(self):
-        for gray in (230, 235, 240, 245):
+        for gray in (216, 225, 230, 235, 240, 245, 246, 248, 250, 253, 254):
             with self.subTest(gray=gray):
                 image = _document_scan(mode="RGB")
                 ImageDraw.Draw(image).text(
@@ -87,6 +88,33 @@ class SmartScanClassificationTests(unittest.TestCase):
                 )
 
                 self.assertFalse(_looks_like_page_scan(image, (595, 842)))
+
+    def test_rejects_faint_text_on_a_nonwhite_background(self):
+        image = _document_scan(mode="RGB")
+        image.paste((250, 250, 250), (0, 0, 1800, 110))
+        ImageDraw.Draw(image).text(
+            (180, 40), "PAID 123", font=ImageFont.load_default(size=64),
+            fill=(248, 248, 248),
+        )
+        self.assertFalse(_looks_like_page_scan(image, (595, 842)))
+
+    def test_rejects_a_tiny_connected_faint_mark(self):
+        image = _document_scan(mode="RGB")
+        ImageDraw.Draw(image).line((180, 40, 180, 41), fill=(254, 254, 254))
+        self.assertFalse(_looks_like_page_scan(image, (595, 842)))
+
+    def test_rejects_faint_text_after_jpeg_roundtrip(self):
+        for quality in (75, 95):
+            with self.subTest(quality=quality):
+                image = _document_scan(mode="RGB")
+                ImageDraw.Draw(image).text(
+                    (180, 40), "PAID 123", font=ImageFont.load_default(size=64),
+                    fill=(248, 248, 248),
+                )
+                stream = io.BytesIO()
+                image.save(stream, "JPEG", quality=quality)
+                stream.seek(0)
+                self.assertFalse(_looks_like_page_scan(Image.open(stream), (595, 842)))
 
     def test_rejects_a_grayscale_gradient_patch(self):
         image = _document_scan(mode="RGB")
@@ -132,7 +160,8 @@ class SmartScanPdfTests(unittest.TestCase):
             source_pdf = root / "source.pdf"
             output_pdf = root / "smart.pdf"
 
-            monochrome = _document_scan(mode="RGB")
+            # Lossless input: JPEG ringing is intentionally uncertain content.
+            monochrome = _document_scan(mode="1")
             colour = _document_scan(mode="RGB")
             ImageDraw.Draw(colour).rectangle((100, 100, 300, 300), fill=(20, 80, 220))
             monochrome.save(

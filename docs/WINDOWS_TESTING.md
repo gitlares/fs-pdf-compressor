@@ -50,3 +50,42 @@ installer itself has a problem:
 Record the Windows edition, architecture, Ghostscript version, and any
 SmartScreen message with the test result. Do not publish either package until
 the checklist succeeds.
+
+## WinSparkle update checklist
+
+For the first installer release with WinSparkle, use two successive candidate
+versions and a test feed signed with the embedded verification key:
+
+1. Confirm `_internal/WinSparkle.dll` and its license texts are packaged.
+2. Confirm the first-run automatic-check choice persists after restarting.
+3. Run **Check for Updates…** against a feed with no newer release.
+4. Offer a newer signed installer and verify download, installation in the
+   existing directory, shutdown, and relaunch without duplicate instances.
+5. Confirm Keep original, Drop Zone, and Explorer integration survive upgrading.
+6. Change the downloaded installer bytes and verify installation is rejected.
+7. Attempt installation while discovering a folder or compressing a batch;
+   verify the current work is preserved and installation is refused until idle.
+8. Once installation starts, verify new drops and **Again** cannot start work.
+9. Unpack the portable ZIP in another directory and confirm it uses the manual
+   release-page link and never runs the installed application's updater.
+
+See [signed Windows updates](RELEASING.md#windows-signed-updates) for feed
+generation. The Ed25519 update signature does not replace Authenticode; the
+Windows installer remains unsigned unless separately code-signed.
+
+## Automated validation recorded on 2026-10-08
+
+[GitHub Actions run 37840732060](https://github.com/gitlares/fs-pdf-compressor/actions/runs/37840732060)
+passed for source commit `851db786106137e7a1424ca00553750114611813` on
+Windows Server 2022. It built the Windows 1.0.16.1 installer and portable ZIP,
+verified package contents, used the real WinSparkle DLL to authenticate a
+download and reject a tampered payload, checked an empty update feed, upgraded
+the published 1.0.16 installer using the native-verified payload, verified
+preserved preferences and Explorer registration, and checked installed
+application startup. See the [permanent result](validation/windows-1.0.16.1-ci.json).
+
+The native download test used a disposable signing key and a loopback feed.
+It did not use the production signing key or publish an update. Unattended
+installation and process startup do not replace visual review of the update
+approval dialog, relaunch, actual Explorer action, drag/drop, or Windows 11
+desktop behavior. Those checks remain pending before a public release.

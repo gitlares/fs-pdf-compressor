@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>FS PDF Compressor for Windows</title>
+    <link>https://gitlares.github.io/fs-pdf-compressor/windows/</link>
+    <description>Signed Windows x64 installer updates</description>
+    <language>en</language>
+  </channel>
+</rss>

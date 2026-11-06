@@ -132,7 +132,7 @@ automatically. Store credentials must remain outside the repository.
 ### Windows 11 x64 releases
 
 Run **Build Windows x64** from the exact tag being released and enter the same
-version stored in `fs_pdf_compressor/version.py`. The workflow rejects a
+Windows version (`WINDOWS_APP_VERSION`) stored in `fs_pdf_compressor/version.py`. The workflow rejects a
 version that does not match the checked-out source and produces these files:
 
 ```text
@@ -224,6 +224,61 @@ exporting the key. Publish the appcast only after the ZIP release asset exists
 at its GitHub URL.
 
 ## Release compliance
+
+### Windows signed updates
+
+Windows installer builds bundle the official WinSparkle 0.9.4 x64 DLL. The
+builder verifies the pinned archive SHA-256 before copying it. The separate
+`docs/appcast-windows.xml` feed is initially empty; never add unsigned updates.
+The portable ZIP keeps manual updates. Only the executable whose directory
+matches the installer's HKCU `Software\gitlares\FS PDF Compressor\InstallDir`
+uses WinSparkle. Existing releases need one manual installer update to gain
+this integration.
+
+WinSparkle asks whether to check automatically on first launch and retains the
+user's choice. Automatic checks use a daily interval; installation requires the
+user's approval in its update dialog. A busy application rejects installation,
+including file discovery and pending Explorer requests. Once installation is
+approved while idle, new compression work is blocked until shutdown. Inno Setup
+updates the existing installation and relaunches the app.
+
+Updates use the existing Sparkle Ed25519 signing identity in the macOS login
+Keychain. Only its public verification key is embedded in the Windows app.
+This update signature does not provide Authenticode signing or remove Windows
+SmartScreen warnings.
+
+After completing the Windows 11 release checklist and uploading the exact
+installer plus SHA-256 file to its matching GitHub Release, run from the repo
+root with a Python environment containing `cryptography`:
+
+```sh
+python3 -m scripts.generate_windows_appcast 1.0.16.1 \
+  release-windows/FS-PDF-Compressor-1.0.16.1-windows-x86_64-setup.exe
+```
+
+The generator checks the published checksum, signs locally using Sparkle's
+`sign_update`, and verifies the signature against the Windows app's public key.
+It does not export private keys or publish the feed. Review and publish
+`docs/appcast-windows.xml` only after the release assets exist.
+
+Before publishing the first enabled release, test on Windows 11 x64: first-run
+automatic-check permission and persistence, manual update checks, no-update
+behavior, an actual signed upgrade to a newer test version, rejected tampered
+installer, installation deferred during discovery/compression, application
+shutdown/relaunch, preserved Keep original and Drop Zone preferences, Explorer
+integration, and portable ZIP manual-update behavior. Verify `_internal` contains
+`WinSparkle.dll` and `licenses/winsparkle/COPYING`. Do not claim end-to-end
+Windows updates based on unit tests or a macOS-only run.
+
+For a Windows-only maintenance revision, keep `APP_VERSION` at the shared
+product version and increment `WINDOWS_APP_VERSION` (for example, 1.0.16.1).
+Build from its dedicated source tag `v1.0.16.1-windows` and use 1.0.16.1 as the
+Windows workflow input. After testing, publish a Windows-only GitHub Release
+with `make_latest=false`, containing only its installer, portable ZIP and
+checksums. Do not mark it as a prerelease or replace the general release.
+The feed generator uses that Windows-specific tag for four-part versions.
+Update Windows download links to that exact release after publication; keep
+macOS/Linux links and `docs/appcast.xml` on the existing shared release.
 
 Before publishing, create and push the Git tag named by `SOURCE_REF`. Attach
 the platform packages to the matching GitHub Release instead of committing

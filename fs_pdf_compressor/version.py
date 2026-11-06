@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Version embedded in every platform's source and frozen application."""
+"""Shared product version and optional platform-specific maintenance revision."""
 
 APP_VERSION = "1.0.16"
+WINDOWS_APP_VERSION = "1.0.16.1"

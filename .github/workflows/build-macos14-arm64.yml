@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   assemble:
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       APP_VERSION: ${{ inputs.version }}
       SOURCE_REF: ${{ github.sha }}

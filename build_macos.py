@@ -24,6 +24,7 @@ import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 import tarfile
 import urllib.request
 from pathlib import Path
@@ -387,7 +388,8 @@ def bundle_python_runtime_licenses() -> dict[str, str]:
     python_executable = Path(sys.executable).resolve()
     _copy_required_license(
         destination / "Python-PSF-LICENSE.txt",
-        [parent / "LICENSE" for parent in python_executable.parents],
+        [Path(sysconfig.get_path("stdlib")) / "LICENSE.txt"]
+        + [parent / "LICENSE" for parent in python_executable.parents],
     )
     _copy_required_license(
         destination / "PyInstaller-GPL-2.0-with-exception.txt",

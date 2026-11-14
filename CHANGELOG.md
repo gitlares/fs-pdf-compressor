@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.17 — Unreleased
+## 1.0.17 — 2026-11-13
 
 - Detect malformed embedded colour profiles, page geometry changes, and altered selectable
   text before replacing an original or saving a compressed copy.

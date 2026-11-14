@@ -23,12 +23,29 @@ jobs:
       DIST_DIR: ci-build
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: arm64
       - name: Install Apple Silicon dependencies
         run: |
-          brew install python@3.12 ghostscript
-          python3.12 -m venv .build-venv
+          brew install ghostscript
+          python -m venv .build-venv
           .build-venv/bin/python -m pip install --upgrade pip
           .build-venv/bin/python -m pip install -r requirements-build.txt
+      - name: Build macOS 14-compatible libidn
+        run: |
+          archive="$RUNNER_TEMP/libidn-1.44.tar.gz"
+          prefix="$RUNNER_TEMP/libidn-1.44-install"
+          curl --fail --location --retry 3 --output "$archive" \
+            https://ftp.gnu.org/gnu/libidn/libidn-1.44.tar.gz
+          echo "499608bab3a65650a0ea52888c13a8deebe3f71408e319acd9ec52e02eb13959  $archive" | shasum -a 256 --check
+          tar -xf "$archive" -C "$RUNNER_TEMP"
+          cd "$RUNNER_TEMP/libidn-1.44"
+          ./configure --prefix="$prefix" --disable-shared --enable-static
+          make -j "$(sysctl -n hw.ncpu)"
+          make install
+          echo "PKG_CONFIG_PATH=$prefix/lib/pkgconfig" >> "$GITHUB_ENV"
       - name: Build pinned Ghostscript 10.07.1
         run: |
           archive="$RUNNER_TEMP/ghostscript-10.07.1.tar.xz"

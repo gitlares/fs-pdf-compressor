@@ -6,7 +6,7 @@ on:
       version:
         description: Version matching the checked-out source
         required: true
-        default: "1.0.16"
+        default: "1.0.17"
 
 permissions:
   contents: read

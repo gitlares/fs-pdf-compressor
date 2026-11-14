@@ -33,7 +33,10 @@ class FileSafetyTests(unittest.TestCase):
             if after_write:
                 after_write()
             return subprocess.CompletedProcess(command, 0)
-        with mock.patch.object(core.subprocess, "run", side_effect=run):
+        with (
+            mock.patch.object(core.subprocess, "run", side_effect=run),
+            mock.patch.object(core, "PdfReader"),
+        ):
             return core.compress_pdf(str(self.original), "/ebook", keep)
 
     def test_existing_legacy_temporary_is_never_overwritten(self):

@@ -12,8 +12,17 @@ import sys
 import tempfile
 from pathlib import Path
 
+from pypdf import PdfReader
+
 from fs_pdf_compressor.system_trash import TrashError, move_to_system_trash
 from fs_pdf_compressor.file_guard import FileBusyError, document_lock
+from fs_pdf_compressor.pdf_validation import (
+    has_invalid_icc,
+    identify_missing_profile,
+    restore_missing_profile,
+    same_page_geometry,
+    same_page_text,
+)
 from fs_pdf_compressor.smart_scans import preprocess_smart_scans
 
 
@@ -293,6 +302,22 @@ def _valid_pdf_output(path):
         return b"%%EOF" in output.read()
 
 
+class PdfFidelityError(ValueError):
+    """The rewritten PDF failed a content safety check."""
+
+
+def _run_pdfwrite(command, destination, environment):
+    result = subprocess.run(
+        command,
+        env=environment,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        **_ghostscript_subprocess_options(),
+    )
+    if result.returncode != 0 or not _valid_pdf_output(destination):
+        raise ValueError("Ghostscript did not produce a complete PDF")
+
+
 def _compress_locked(original_path, pdf_settings, keep_original):
     filename = os.path.basename(original_path)
     temp_path = None
@@ -331,30 +356,59 @@ def _compress_locked(original_path, pdf_settings, keep_original):
             prefix=".fs-pdf-", suffix=".tmp", dir=Path(original_path).parent
         )
         os.close(fd)
-        result = subprocess.run(
-            _ghostscript_command(
-                gs_path,
-                temp_path,
-                compression_input,
-                effective_pdf_settings,
-            ),
-            env=gs_environment,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            **_ghostscript_subprocess_options(),
+        command = _ghostscript_command(
+            gs_path, temp_path, compression_input, effective_pdf_settings
         )
-        if result.returncode != 0 or not os.path.exists(temp_path):
-            if os.path.exists(temp_path):
-                os.unlink(temp_path)
-            return f"{filename} — compression failed", None
-
-        new_size = os.path.getsize(temp_path)
-        if not _valid_pdf_output(temp_path):
-            raise ValueError("Ghostscript produced an invalid or truncated PDF")
-        if new_size >= original_size:
-            os.unlink(temp_path)
+        _run_pdfwrite(command, temp_path, gs_environment)
+        if os.path.getsize(temp_path) >= original_size:
+            Path(temp_path).unlink()
             return f"{filename} — no size reduction", None
 
+        source_pdf = PdfReader(original_path)
+        output_pdf = PdfReader(temp_path)
+        if has_invalid_icc(output_pdf):
+            profile = identify_missing_profile(source_pdf, output_pdf)
+            if profile is None and effective_pdf_settings != "/default":
+                # Downsampling can erase the unchanged JPEGs that identify
+                # which source profile Ghostscript truncated.
+                Path(temp_path).unlink()
+                command = _ghostscript_command(gs_path, temp_path, original_path, "/default")
+                _run_pdfwrite(command, temp_path, gs_environment)
+                profile = identify_missing_profile(source_pdf, PdfReader(temp_path))
+            if profile is None:
+                raise PdfFidelityError("invalid colour profile")
+            command = _ghostscript_command(gs_path, temp_path, original_path, "/ebook")
+            command[-1:-1] = [
+                "-dDownsampleColorImages=false",
+                "-dDownsampleGrayImages=false",
+                "-dDownsampleMonoImages=false",
+                "-dAutoFilterColorImages=false",
+                "-sColorImageFilter=DCTEncode",
+                "-dPassThroughJPEGImages=false",
+            ]
+            Path(temp_path).unlink()
+            _run_pdfwrite(command, temp_path, gs_environment)
+            if has_invalid_icc(PdfReader(temp_path)):
+                with tempfile.TemporaryDirectory(
+                    prefix=".fs-pdf-repair-", dir=Path(temp_path).parent
+                ) as repair_dir:
+                    repaired = Path(repair_dir) / "repaired.pdf"
+                    if not restore_missing_profile(temp_path, repaired, source_pdf, profile):
+                        raise PdfFidelityError("invalid colour profile after retry")
+                    os.replace(repaired, temp_path)
+            output_pdf = PdfReader(temp_path)
+            if has_invalid_icc(output_pdf):
+                raise PdfFidelityError("invalid colour profile after repair")
+        if not same_page_geometry(source_pdf, output_pdf):
+            raise PdfFidelityError("page geometry changed")
+
+        if not same_page_text(source_pdf, output_pdf):
+            raise PdfFidelityError("selectable text changed")
+
+        new_size = os.path.getsize(temp_path)
+        if new_size >= original_size:
+            Path(temp_path).unlink()
+            return f"{filename} — no size reduction", None
         current_stat = os.stat(original_path)
         if (original_stat.st_ino, original_stat.st_size, original_stat.st_mtime_ns) != (current_stat.st_ino, current_stat.st_size, current_stat.st_mtime_ns):
             raise OSError("Original PDF changed during compression")
@@ -384,6 +438,8 @@ def _compress_locked(original_path, pdf_settings, keep_original):
                 os.unlink(temp_path)
             except OSError:
                 pass
+        if isinstance(error, PdfFidelityError):
+            return f"{filename} — compression failed fidelity checks; original kept", None
         if isinstance(error, TrashError):
             return f"{filename} — could not recycle original; not replaced", None
         return f"{filename} — compression failed", None

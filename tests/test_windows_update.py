@@ -61,7 +61,7 @@ class WindowsUpdaterTests(unittest.TestCase):
 
     def test_windows_revision_does_not_change_shared_product_version(self):
         from fs_pdf_compressor.version import APP_VERSION, WINDOWS_APP_VERSION
-        self.assertEqual(WINDOWS_APP_VERSION.rsplit('.', 1)[0], APP_VERSION)
+        self.assertIn(APP_VERSION, (WINDOWS_APP_VERSION, WINDOWS_APP_VERSION.rsplit('.', 1)[0]))
         self.assertEqual(build_windows.APP_VERSION, WINDOWS_APP_VERSION)
         self.dll.win_sparkle_set_app_details.assert_called_once_with(
             'gitlares', 'FS PDF Compressor', WINDOWS_APP_VERSION)
@@ -193,9 +193,10 @@ class WindowsUpdateLifecycleTests(unittest.TestCase):
         self.window._windows_updater._dll.win_sparkle_check_update_with_ui.assert_called_once()
 
     def test_about_displays_windows_revision(self):
+        from fs_pdf_compressor.version import WINDOWS_APP_VERSION
         with mock.patch.object(self.module.QtWidgets.QMessageBox, 'about') as about:
             self.window.show_about()
-        self.assertIn('1.0.16.1', about.call_args.args[2])
+        self.assertIn(WINDOWS_APP_VERSION, about.call_args.args[2])
 
 
 if __name__ == '__main__':

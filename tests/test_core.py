@@ -518,6 +518,8 @@ class GhostscriptCommandTests(unittest.TestCase):
                 return subprocess.CompletedProcess(command, 0, b"", b"")
 
             with (
+                # These tests use stub PDF bytes to isolate file handling.
+                mock.patch("fs_pdf_compressor.core.PdfReader"),
                 mock.patch(
                     "fs_pdf_compressor.core.get_ghostscript_config",
                     return_value=("gs", {}),
@@ -551,6 +553,8 @@ class GhostscriptCommandTests(unittest.TestCase):
                 return subprocess.CompletedProcess(command, 0, b"", b"")
 
             with (
+                # These tests use stub PDF bytes to isolate file handling.
+                mock.patch("fs_pdf_compressor.core.PdfReader"),
                 mock.patch(
                     "fs_pdf_compressor.core.get_ghostscript_config",
                     return_value=("gs", {}),
@@ -639,6 +643,8 @@ class GhostscriptCommandTests(unittest.TestCase):
                 return subprocess.CompletedProcess(command, 0, b"", b"")
 
             with (
+                # These tests use stub PDF bytes to isolate file handling.
+                mock.patch("fs_pdf_compressor.core.PdfReader"),
                 mock.patch(
                     "fs_pdf_compressor.core.get_ghostscript_config",
                     return_value=("gs", {}),
@@ -674,6 +680,8 @@ class GhostscriptCommandTests(unittest.TestCase):
                 return subprocess.CompletedProcess(command, 0, b"", b"")
 
             with (
+                # These tests use stub PDF bytes to isolate file handling.
+                mock.patch("fs_pdf_compressor.core.PdfReader"),
                 mock.patch(
                     "fs_pdf_compressor.core.get_ghostscript_config",
                     return_value=("gs", {}),

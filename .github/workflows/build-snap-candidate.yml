@@ -1,0 +1,37 @@
+name: Build Linux Snap candidate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/build-snap-candidate.yml"
+      - "snapcraft.yaml"
+      - "snap/**"
+      - "fs_pdf_compressor/**"
+      - "linux_app.py"
+
+permissions:
+  contents: read
+
+jobs:
+  assemble:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snapcore/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79
+        id: snapcraft
+      - name: Generate package checksum
+        env:
+          SNAP_FILE: ${{ steps.snapcraft.outputs.snap }}
+        run: |
+          cd "$(dirname "$SNAP_FILE")"
+          snap_name="$(basename "$SNAP_FILE")"
+          sha256sum "$snap_name" > "$snap_name.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fs-pdf-compressor-snap-amd64
+          path: |
+            ${{ steps.snapcraft.outputs.snap }}
+            ${{ steps.snapcraft.outputs.snap }}.sha256
+          if-no-files-found: error
+          retention-days: 7

@@ -60,6 +60,8 @@ jobs:
           ./configure --prefix="$prefix" --disable-cups --disable-fontconfig --without-x
           make -j "$(sysctl -n hw.ncpu)"
           make install
+          # Make the resource tree available when the app sets GS_LIB.
+          make install-resdata0 install-iccdata0
           cp doc/COPYING "$prefix/LICENSE"
           test "$("$prefix/bin/gs" --version)" = "10.07.1"
           echo "GHOSTSCRIPT_ROOT=$prefix" >> "$GITHUB_ENV"

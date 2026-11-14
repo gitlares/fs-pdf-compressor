@@ -20,9 +20,13 @@ limited to software updates and links explicitly opened by the user:
 
 - On macOS, Sparkle periodically reads the public update feed hosted on GitHub
   Pages and can download signed update archives from GitHub Releases.
-- On Windows, **Check for Updates…** opens the public GitHub Releases page in
-  the user's browser. The app does not check for or download updates in the
-  background.
+- Windows installer builds with WinSparkle ask whether to check for updates
+  automatically. If enabled, they periodically read a public GitHub Pages feed.
+  **Check for Updates…** also checks that feed on request. Accepted updates are
+  downloaded from GitHub Releases and their Ed25519 signatures are verified
+  before installation. No document data is sent. Portable builds and the
+  published 1.0.16 Windows release open the GitHub Releases page for manual
+  updates instead.
 - On Linux, the AppImage contacts the GitHub Releases API only when the user
   selects **Check for Updates…**. If the user accepts an available update, it
   downloads the AppImage and its published SHA-256 checksum from GitHub.

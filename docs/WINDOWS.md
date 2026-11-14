@@ -88,13 +88,14 @@ Install the setup executable on a clean Windows VM and check:
 6. With **Keep original** on, the original remains beside
    `name compressed.pdf`.
 
-Windows does not yet provide an in-app auto-update mechanism. Obtain new
-versions from the project's GitHub releases after they are published.
+The published 1.0.16 Windows build uses manual updates. Installer builds from
+the current source add WinSparkle, subject to the
+[update release checklist](WINDOWS_TESTING.md#winsparkle-update-checklist).
 
 ## Reproducible release builds
 
 For ordinary public releases, build from the exact Git tag that defines the
-shared version used by macOS, Linux, and Windows. Set `APP_VERSION` and
+Windows version in `WINDOWS_APP_VERSION`. Set the build environment's `APP_VERSION` and
 `SOURCE_REF` to that version/tag when producing the installer.
 
 The **Build Windows x64** GitHub Actions workflow is the preferred packaging
@@ -103,6 +104,8 @@ version. Download the resulting installer, portable ZIP, and SHA-256 files,
 then complete [Windows release testing](WINDOWS_TESTING.md) before attaching
 them to the matching GitHub Release.
 
-Version 1.0.13 introduced the first Windows package. Current shared releases
-must build every published platform from the same version tag and identify the
-exact public source commit in their release notes.
+Windows-only revisions use a four-part version such as 1.0.16.1, with source
+tag `v1.0.16.1-windows`. They do not change the shared macOS/Linux version.
+Publish them as Windows-only releases without making them the general latest
+release; see [release instructions](RELEASING.md#windows-signed-updates).
+Every package must identify the exact public source commit used to build it.

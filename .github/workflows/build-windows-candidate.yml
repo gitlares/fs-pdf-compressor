@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version matching the checked-out source
+        description: Windows version matching WINDOWS_APP_VERSION in the checked-out source
         required: true
 
 permissions:
@@ -60,6 +60,7 @@ jobs:
           python -m venv .windows-build-venv
           .windows-build-venv\Scripts\python -m pip install --upgrade pip
           .windows-build-venv\Scripts\python -m pip install -r requirements-windows.txt
+          .windows-build-venv\Scripts\python -m pip install cryptography==46.0.3
           $env:QT_QPA_PLATFORM = "offscreen"
           .windows-build-venv\Scripts\python -B -m unittest discover -s tests
           if ($LASTEXITCODE -ne 0) { throw "Windows regression tests failed" }
@@ -82,8 +83,29 @@ jobs:
             "$app\ghostscript\bin\gswin64c.exe",
             "$app\ghostscript\AGPL-3.0.txt",
             "$app\SOURCE_OFFER.md",
-            "$app\THIRD_PARTY_MANIFEST.json"
+            "$app\THIRD_PARTY_MANIFEST.json",
+            "$app\WinSparkle.dll",
+            "$app\licenses\winsparkle\COPYING"
           ) | ForEach-Object { if (-not (Test-Path $_)) { throw "Missing runtime compliance file: $_" } }
+
+      - name: Validate installer upgrade and native signed updates
+        shell: pwsh
+        timeout-minutes: 12
+        run: |
+          $installer = Get-ChildItem ci-windows-build -Filter "*-setup.exe" | Select-Object -First 1
+          .windows-build-venv\Scripts\python -B -m scripts.verify_windows_installer --installer $installer.FullName --portable "$env:RUNNER_TEMP\candidate" --output "$env:RUNNER_TEMP\windows-validation"
+          if ($LASTEXITCODE -ne 0) { throw "Windows installer/update validation failed" }
+
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-validation-${{ inputs.version }}
+          path: |
+            ${{ runner.temp }}/windows-validation/*.json
+            ${{ runner.temp }}/windows-validation/*.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload Windows release candidate
         uses: actions/upload-artifact@v4

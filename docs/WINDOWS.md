@@ -1,13 +1,13 @@
 # Build FS PDF Compressor on Windows
 
 FS PDF Compressor can be built on Windows from this repository. The Windows
-edition uses the same local compression engine and three quality profiles as
+edition uses the same local compression engine and quality profiles as
 the macOS and Linux editions. It is distributed under AGPL-3.0-or-later.
 
 ## Install the public build
 
 For Windows 11 x64, download the per-user installer or portable ZIP from the
-[1.0.16 release](https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.16).
+[1.0.17 release](https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.17).
 Each artifact has a matching SHA-256 file. The installer includes the
 unmodified AGPL Ghostscript runtime and needs no administrator rights.
 
@@ -88,8 +88,8 @@ Install the setup executable on a clean Windows VM and check:
 6. With **Keep original** on, the original remains beside
    `name compressed.pdf`.
 
-The published 1.0.16 Windows build uses manual updates. Installer builds from
-the current source add WinSparkle, subject to the
+Install 1.0.17 manually to enable future WinSparkle updates. Portable
+updates are manual. See the
 [update release checklist](WINDOWS_TESTING.md#winsparkle-update-checklist).
 
 ## Reproducible release builds

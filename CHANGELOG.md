@@ -8,6 +8,8 @@
   image resolution. Restore the original embedded ICC profile when unchanged
   JPEGs and the surviving profiles identify it unambiguously.
 - Add the optional Smart scans profile for monochrome documents.
+  Thanks to [@MicheleFerr](https://github.com/MicheleFerr) for
+  [PR #18](https://github.com/gitlares/fs-pdf-compressor/pull/18).
 - Add WinSparkle to the Windows installer for signed update downloads and
   user-approved installation. Portable updates remain manual. Existing
   Windows users need one manual installation to get the updater.

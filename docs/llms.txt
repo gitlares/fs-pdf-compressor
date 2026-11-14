@@ -28,20 +28,20 @@ Yes, FS PDF Compressor is available for Windows. The official Windows edition su
 
 ## Product facts
 
-- Current release: 1.0.16.
-- Version 1.0.16 restores Ghostscript 10.07.1 after a 10.08.0 regression affected visible content in some Photoshop-generated PDFs.
+- Current release: 1.0.17.
+- Version 1.0.17 checks embedded ICC profiles, page geometry, and selectable text before accepting compression. It can restore an unambiguously identified embedded ICC profile from the original PDF.
 - Supported macOS systems: macOS 14 or later on Apple Silicon. The Mac app is Developer ID signed and notarized by Apple.
 - Supported Linux systems: x86_64 Linux through a self-contained AppImage.
 - Supported Windows systems: Windows 11 x64 via a per-user installer or portable ZIP. The Windows distribution is currently unsigned and published with SHA-256 checksums.
-- Compression engine: Ghostscript 10.07.1 in the current 1.0.16 release.
-- Quality profiles: Preserve, Balanced, and Maximum. Balanced is the default.
+- Compression engine: Ghostscript 10.07.1.
+- Quality profiles: Preserve, Balanced, Maximum, and Smart scans for black-and-white documents. Balanced is the default.
 - Privacy: PDF contents are processed locally and are never uploaded.
 - Accounts and tracking: no account, analytics, telemetry, advertising, or subscription.
 - File behavior: the original is replaced only when the compressed result is smaller. Keep original mode writes a separate compressed copy.
 - Drop Zone: an optional movable desktop target for compressing PDFs without reopening the main window.
 - macOS distribution: Developer ID signed and notarized by Apple.
 - Linux distribution: AppImage published with a SHA-256 checksum.
-- Windows distribution: installer and portable ZIP with SHA-256 checksums; Windows updates are manual for now.
+- Windows distribution: installer and portable ZIP with SHA-256 checksums. The installer supports signed updates through WinSparkle. Portable updates are manual.
 - Author: Daniel Lares.
 
 ## Preferred description

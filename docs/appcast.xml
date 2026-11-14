@@ -5,6 +5,17 @@
         <link>https://gitlares.github.io/fs-pdf-compressor/</link>
         <description>Signed updates for FS PDF Compressor.</description>
         <item>
+            <title>1.0.17</title>
+            <pubDate>Fri, 13 Nov 2026 21:39:42 -0600</pubDate>
+            <link>https://gitlares.github.io/fs-pdf-compressor/</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.17</sparkle:fullReleaseNotesLink>
+            <sparkle:version>1.0.17</sparkle:version>
+            <sparkle:shortVersionString>1.0.17</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.17/FS-PDF-Compressor-1.0.17-arm64.zip" length="43506252" type="application/octet-stream" sparkle:edSignature="QixOx07xXzIkIMRFMVt69uBI6tJylDpK6LrR+Deh5gXOO0ckn37lHB+ez9a5dRL21SVbBfs456Bq6D949vE/DQ=="/>
+        </item>
+        <item>
             <title>1.0.16</title>
             <pubDate>Tue, 29 Sep 2026 09:15:41 -0600</pubDate>
             <link>https://gitlares.github.io/fs-pdf-compressor/</link>

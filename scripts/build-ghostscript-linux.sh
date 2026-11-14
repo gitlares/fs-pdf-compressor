@@ -15,4 +15,6 @@ cd "$work_dir/ghostscript-${version}"
 ./configure --prefix="$prefix"
 make -j "$(nproc)"
 make install
+# The packaged application sets GS_LIB to the relocated resource tree.
+make install-resdata0 install-iccdata0
 test "$("$prefix/bin/gs" --version)" = "$version"

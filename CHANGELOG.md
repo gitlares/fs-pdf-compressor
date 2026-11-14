@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.17 — 2026-11-13
+
+- Detect malformed embedded colour profiles, page geometry changes, and altered selectable
+  text before replacing an original or saving a compressed copy.
+- Retry eligible colour-profile failures with Ghostscript at the original
+  image resolution. Restore the original embedded ICC profile when unchanged
+  JPEGs and the surviving profiles identify it unambiguously.
+- Add the optional Smart scans profile for monochrome documents.
+  Thanks to [@MicheleFerr](https://github.com/MicheleFerr) for
+  [PR #18](https://github.com/gitlares/fs-pdf-compressor/pull/18).
+- Add WinSparkle to the Windows installer for signed update downloads and
+  user-approved installation. Portable updates remain manual. Existing
+  Windows users need one manual installation to get the updater.
+
 ## 1.0.16 — 2026-09-29
 
 - Restore Ghostscript 10.07.1 on macOS, Windows, AppImage, and Snap after a

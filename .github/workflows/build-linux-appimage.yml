@@ -6,7 +6,7 @@ on:
       version:
         description: Version matching the checked-out source
         required: true
-        default: "1.0.16"
+        default: "1.0.17"
 
 permissions:
   contents: read
@@ -34,8 +34,8 @@ jobs:
           mkdir -p .tools
           curl --fail --location --retry 3 \
             --output "$APPIMAGETOOL" \
-            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
-          echo "a6d71e2b6cd66f8e8d16c37ad164658985e0cf5fcaa950c90a482890cb9d13e0  $APPIMAGETOOL" | sha256sum --check --status
+            https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+          echo "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0  $APPIMAGETOOL" | sha256sum --check
           chmod +x "$APPIMAGETOOL"
       - name: Assemble AppImage
         env:

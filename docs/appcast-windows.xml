@@ -1,9 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
   <channel>
     <title>FS PDF Compressor for Windows</title>
     <link>https://gitlares.github.io/fs-pdf-compressor/windows/</link>
     <description>Signed Windows x64 installer updates</description>
     <language>en</language>
+    <item>
+      <title>FS PDF Compressor 1.0.17</title>
+      <pubDate>Sat, 14 Nov 2026 03:41:26 +0000</pubDate>
+      <sparkle:releaseNotesLink>https://github.com/gitlares/fs-pdf-compressor/releases/tag/v1.0.17</sparkle:releaseNotesLink>
+      <enclosure url="https://github.com/gitlares/fs-pdf-compressor/releases/download/v1.0.17/FS-PDF-Compressor-1.0.17-windows-x86_64-setup.exe" length="59403124" type="application/octet-stream" sparkle:version="1.0.17" sparkle:shortVersionString="1.0.17" sparkle:os="windows-x64" sparkle:edSignature="Bt+AY4OAt/7wLr5f4x0u3g8QWFDOwcGH5agHyLCWfAsjAl+x5lXKUOh/Y8uu/KxljsMj1ltqQG0Zw92rJMNlAg==" sparkle:installerArguments="/SILENT /SP- /NOICONS /NORESTART" />
+    </item>
   </channel>
 </rss>
